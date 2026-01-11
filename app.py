@@ -1095,7 +1095,7 @@ def create_gradio_interface():
             fn=on_reference_upload,
             inputs=[reference_upload_btn],
             outputs=[reference_file_select]
-
+        )
         # Основная кнопка Generate
         generate_btn.click(
             fn=on_generate_click,
