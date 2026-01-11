@@ -15,8 +15,8 @@ torchaudio==2.5.1+cu121
 # Chatterbox TTS engine - Install from chatterbox-v2 fork
 chatterbox-tts @ file:./src/chatterbox
 # Core Web Framework
-fastapi
-uvicorn[standard]
+#fastapi
+#uvicorn[standard]
 
 # Other ML & Audio Libraries
 numpy>=1.24.0,<1.26.0  # Match chatterbox-v2 requirements
