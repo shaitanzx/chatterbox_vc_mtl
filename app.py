@@ -681,25 +681,6 @@ async def on_generate_click(
         return None, f"❌ {message}", notification
 
 
-
-def on_copy_click(text: str):
-    """Обработчик кнопки Copy (аналог из script.js)"""
-    import pyperclip
-    pyperclip.copy(text)
-    gr.Info("Text copied to clipboard")
-    return
-    
-
-def on_paste_click(text):
-    """Обработчик кнопки Paste (аналог из script.js)"""
-    import pyperclip
-    text += pyperclip.paste()
-    return text
-
-def on_clear_click():
-    """Обработчик кнопки Clear (аналог из script.js)"""
-    return "", "0"
-
 def on_text_input(text: str) -> str:
     """Обработчик ввода текста (аналог из script.js)"""
     return str(len(text))
@@ -1050,23 +1031,7 @@ def create_gradio_interface():
         )
         
         # Кнопки управления текстом
-        copy_btn.click(
-            fn=on_copy_click,
-            inputs=[text_area]
-        )
-        
-        paste_btn.click(
-            fn=on_paste_click,
-            inputs=[text_area],
-            outputs=[text_area]
-        )
-        
-        clear_btn.click(
-            fn=on_clear_click,
-            inputs=[],
-            outputs=[text_area, char_count]
-        )
-        
+
         accent_btn.click(
             fn=on_accent_click,
             inputs=[text_area],

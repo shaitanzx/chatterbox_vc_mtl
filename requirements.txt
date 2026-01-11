@@ -49,7 +49,7 @@ pydub
 audiotsm
 praat-parselmouth
 
-pyperclip
+
 russtress==0.1.4
 ruaccent
 chardet
