@@ -187,11 +187,12 @@ def get_ui_initial_data() -> Dict[str, Any]:
         ui_static_path = Path(__file__).parent
         presets_file = ui_static_path / "presets.yaml"
         if presets_file.exists():
+            print ('-----------------------------------------')
             with open(presets_file, "r", encoding="utf-8") as f:
                 yaml_content = yaml.safe_load(f)
                 if isinstance(yaml_content, list):
                     loaded_presets = yaml_content
-        
+        print ('qqqqqqqqqqqqqqqqqqqqqqqqq', loaded_presets)
         return {
             "config": full_config,
             "reference_files": reference_files,
