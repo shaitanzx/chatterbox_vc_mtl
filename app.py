@@ -167,7 +167,7 @@ def on_accent_click(text: str):
         raw_text = accent_model.process_all(text)
         accented_text = convert_plus_to_accent(raw_text)
         accented_text = apply_custom_fixes(accented_text)
-        gr.Info(✅ Stresses are placed!)
+        gr.Info("✅ Stresses are placed!")
         return accented_text
     except Exception as e:
         logger.error(f"Error in accentuate_text_endpoint: {e}", exc_info=True)
