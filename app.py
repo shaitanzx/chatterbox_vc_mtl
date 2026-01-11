@@ -711,16 +711,7 @@ def create_gradio_interface():
         label = LANGUAGE_LABELS.get(lang_code, lang_code)
         language_options.append(f"{label} ({lang_code})")
     
-    with gr.Blocks(
-        title="Chatterbox TTS Server",
-        theme=gr.themes.Soft(),
-        css="""
-        .compact-row { margin-bottom: 10px; }
-        .warning-text { color: #f59e0b; }
-        .success-text { color: #10b981; }
-        .card { border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem; }
-        """
-    ) as demo:
+    with gr.Blocks(title="Chatterbox TTS Server") as demo:
         
         # Заголовок (аналог navbar из index.html)
         gr.Markdown(f"# 🎤 {get_ui_title()}")
