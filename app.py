@@ -184,7 +184,7 @@ def get_ui_initial_data() -> Dict[str, Any]:
         
         # Load presets
         loaded_presets = []
-        ui_static_path = Path(__file__).parent / "ui"
+        ui_static_path = Path(__file__).parent
         presets_file = ui_static_path / "presets.yaml"
         if presets_file.exists():
             with open(presets_file, "r", encoding="utf-8") as f:
