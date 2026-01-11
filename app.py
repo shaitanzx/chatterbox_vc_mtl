@@ -586,12 +586,26 @@ def populatePresets() -> List[Dict[str, Any]]:
                 return yaml_content
     return []
 
-def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Аналог applyPreset из script.js"""
+def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
+    # Поиск пресета
     for preset in presets:
         if preset.get("name") == preset_name:
-            return preset
-    return {}
+            # Извлекаем prompt (может быть на верхнем уровне)
+            prompt = preset.get("prompt", "")  # ← если его нет — пустая строка
+            
+            # Извлекаем параметры из вложенного словаря 'params'
+            params = preset.get("params", {})
+            
+            temperature = float(params.get("temperature", 0.7))
+            exaggeration = float(params.get("exaggeration", 1.0))
+            cfg_weight = float(params.get("cfg_weight", 7.0))
+            speed_factor = float(params.get("speed_factor", 1.0))
+            seed = int(params.get("seed", -1))
+            
+            return (prompt, temperature, exaggeration, cfg_weight, speed_factor, seed)
+    
+    # Если пресет не найден — значения по умолчанию
+    return ("", 0.7, 1.0, 7.0, 1.0, -1)
 
 # --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
 
