@@ -717,48 +717,46 @@ def create_gradio_interface():
         gr.Markdown(f"# 🎤 {get_ui_title()}")
         
         with gr.Row():
-            with gr.Column(scale=3):
-                # Основная карта с текстом (аналог card-base из index.html)
-                with gr.Group(elem_classes="card"):
-                    gr.Markdown("### Text to synthesize")
-                    gr.Markdown("Enter the text you want to convert to speech. For audiobooks, you can paste long chapters.")
+            with gr.Group(elem_classes="card"):
+                gr.Markdown("### Text to synthesize")
+                gr.Markdown("Enter the text you want to convert to speech. For audiobooks, you can paste long chapters.")
+                
+                text_area = gr.Textbox(
+                    label="",
+                    placeholder="Enter text here...",
+                    lines=8,
+                    max_lines=15,
+                    show_copy_button=True,
+                    elem_id="text"
+                )
                     
-                    text_area = gr.Textbox(
-                        label="",
-                        placeholder="Enter text here...",
-                        lines=8,
-                        max_lines=15,
-                        show_copy_button=True,
-                        elem_id="text"
+                with gr.Row():
+                    char_count = gr.Textbox(
+                        label="Characters",
+                        value="0",
+                        interactive=False,
+                        scale=1,
+                        elem_id="char-count"
                     )
                     
-                    with gr.Row():
-                        char_count = gr.Textbox(
-                            label="Characters",
-                            value="0",
-                            interactive=False,
-                            scale=1,
-                            elem_id="char-count"
-                        )
+                # Кнопки действий (аналог flex-wrap из index.html)
+                with gr.Row(elem_classes="compact-row"):
+                    generate_btn = gr.Button("🎵 Generate Speech", variant="primary", elem_id="generate-btn")
                     
-                    # Кнопки действий (аналог flex-wrap из index.html)
-                    with gr.Row(elem_classes="compact-row"):
-                        generate_btn = gr.Button("🎵 Generate Speech", variant="primary", elem_id="generate-btn")
-                    
-                    with gr.Row(elem_classes="compact-row"):
-                        copy_btn = gr.Button("📋 Copy", variant="secondary", size="sm")
-                        paste_btn = gr.Button("📥 Paste", variant="secondary", size="sm")
-                        clear_btn = gr.Button("🗑 Clear", variant="secondary", size="sm")
-                        accent_btn = gr.Button("🇷🇺 Stress", variant="secondary", size="sm")
+                with gr.Row(elem_classes="compact-row"):
+                    copy_btn = gr.Button("📋 Copy", variant="secondary", size="sm")
+                    paste_btn = gr.Button("📥 Paste", variant="secondary", size="sm")
+                    clear_btn = gr.Button("🗑 Clear", variant="secondary", size="sm")
+                    accent_btn = gr.Button("🇷🇺 Stress", variant="secondary", size="sm")
                     
                     # Уведомления (аналог popup-msg)
-                    notification_display = gr.JSON(
-                        label="Notifications",
-                        value={},
-                        visible=False
-                    )
+                notification_display = gr.JSON(
+                    label="Notifications",
+                    value={},
+                    visible=False
+                )
             
-            with gr.Column(scale=2):
+        with gr.Row(scale=2):
                 # Настройки генерации (аналог Generation Parameters из index.html)
                 with gr.Accordion("🎛 Generation Parameters", open=True):
                     with gr.Row():
