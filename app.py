@@ -743,6 +743,7 @@ def create_gradio_interface():
         with gr.Row():    
                 text_area = gr.Textbox(
                     label="",
+                    value=current_config.get("ui_state", {}).get("last_text", ""),
                     placeholder="Enter text here...",
                     lines=8,
                     max_lines=15,
