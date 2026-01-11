@@ -1047,11 +1047,11 @@ def create_gradio_interface():
             outputs=[speed_warning]
         )
         
-        chunk_size_slider.change(
-            fn=lambda x: str(x),
-            inputs=[chunk_size_slider],
-            outputs=[chunk_size_value_display]
-        )
+#        chunk_size_slider.change(
+#            fn=lambda x: str(x),
+#            inputs=[chunk_size_slider],
+#            outputs=[chunk_size_value_display]
+#        )
         
         # Обновление счетчика символов
         text_area.change(
