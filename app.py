@@ -843,8 +843,7 @@ def create_gradio_interface():
                                 )
                             seed_input = gr.Number(
                                 value=get_gen_default_seed(),
-                                label="Generation Seed",
-                                info="0 or -1 for random"
+                                label="Generation Seed (0 or -1 for random)"
                                 )
                         with gr.Column():
                             exaggeration_slider = gr.Slider(
