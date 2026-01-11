@@ -624,7 +624,7 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
 
 # --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
 
-async def on_generate_click(
+def on_generate_click(
     text: str,
     voice_mode: str,
     predefined_voice: str,
@@ -644,19 +644,19 @@ async def on_generate_click(
     
     # Валидация (аналог строк 545-560 script.js)
     if not text or text.strip() == "":
-        return None, "❌ Please enter some text to generate speech.", show_notification("No text entered", "error")
+        return None)
     
     if voice_mode == "predefined" and predefined_voice == "none":
-        return None, "❌ Please select a predefined voice.", show_notification("No voice selected", "error")
+        return None
     
     if voice_mode == "clone" and reference_file == "none":
-        return None, "❌ Please select a reference audio file.", show_notification("No reference file", "error")
+        return None
     
     # Проверка предупреждений (аналог строк 562-570 script.js)
     # (в Gradio можно добавить чекбоксы для отключения предупреждений)
     
     # Вызов TTS генерации
-    audio_file, message = await custom_tts_endpoint(
+    audio_file, message = custom_tts_endpoint(
         text=text,
         voice_mode=voice_mode,
         predefined_voice_id=predefined_voice if predefined_voice != "none" else None,
@@ -672,13 +672,14 @@ async def on_generate_click(
         output_format=output_format,
         audio_name=audio_name
     )
-    
-    if audio_file:
-        notification = show_notification("Audio generated successfully!", "success")
-        return audio_file, f"✅ {message}", notification
-    else:
-        notification = show_notification(f"Generation failed: {message}", "error")
-        return None, f"❌ {message}", notification
+    print('aaaaaaaaaaaaaaaaaaaaa',message)
+    return audio_file
+    #if audio_file:
+    #    notification = show_notification("Audio generated successfully!", "success")
+    #    return audio_file, f"✅ {message}", notification
+    #else:
+    #    notification = show_notification(f"Generation failed: {message}", "error")
+    #    return None, f"❌ {message}", notification
 
 
 def on_text_input(text: str) -> str:
@@ -1038,11 +1039,8 @@ def create_gradio_interface():
                 config_audio_output_format,
                 audio_name_input
             ],
-            outputs=[audio_output, status_output, notification_display]
-        ).then(
-            fn=lambda: gr.update(visible=True),
-            outputs=notification_display
-        )
+            outputs=[audio_output]
+            )
         
         # Кнопки управления текстом
 
