@@ -103,6 +103,21 @@ LANGUAGE_LABELS = {
     'it': "Italian", 'fi': "Finnish", 'no': "Norwegian", 'ms': "Malay", 'he': "Hebrew",
     'el': "Greek", 'da': "Danish", 'sw': "Swahili"
 }
+# Создаём обратное отображение: "Russian" → "ru"
+DISPLAY_TO_CODE = {name: code for code, name in LANGUAGE_LABELS.items()}
+
+def extract_language_code(display_text: str) -> str:
+    """
+    Извлекает код языка из строки вида 'Russian (ru)' или просто 'Russian'.
+    Возвращает код (например, 'ru') или исходную строку, если не найдено.
+    """
+    # Убираем скобки и всё, что в них — оставляем только название
+    if " (" in display_text and display_text.endswith(")"):
+        lang_name = display_text.split(" (")[0]
+    else:
+        lang_name = display_text  # на случай, если скобок нет
+
+    return DISPLAY_TO_CODE.get(lang_name, display_text)
 
 # --- Accentuation Support (из server.py) ---
 try:
@@ -656,7 +671,7 @@ def on_generate_click(
     # (в Gradio можно добавить чекбоксы для отключения предупреждений)
     
     # Вызов TTS генерации
-
+    language=extract_language_code(language)
     audio_file, message = custom_tts_endpoint(
         text=text,
         voice_mode=voice_mode,
