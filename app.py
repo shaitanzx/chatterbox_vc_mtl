@@ -1134,13 +1134,7 @@ def main():
     logger.info(f"Web UI available at http://{server_host}:{server_port}")
     
     # Запуск Gradio
-    demo.launch(
-        server_name=server_host,
-        server_port=server_port,
-        share=False,
-        debug=True,
-        show_error=True
-    )
+    demo.launch(share=True)
 
 if __name__ == "__main__":
     main()
