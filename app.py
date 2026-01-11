@@ -769,7 +769,7 @@ def create_gradio_interface():
                         label="Chunk Size",
                         visible=True
                     )
-        with gr.Row():
+        with gr.Group():
             with gr.Row():
                 gr.Markdown("🗣 Voice Mode")                
             with gr.Row():    
