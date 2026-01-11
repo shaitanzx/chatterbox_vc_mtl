@@ -1,0 +1,55 @@
+server:
+  host: 127.0.0.1
+  port: 8004
+  use_ngrok: false
+  use_auth: false
+  auth_username: user
+  auth_password: password
+  log_file_path: logs\tts_server.log
+  log_file_max_size_mb: 10
+  log_file_backup_count: 5
+model:
+  repo_id: ResembleAI/chatterbox
+tts_engine:
+  device: auto
+  predefined_voices_path: voices
+  reference_audio_path: reference_audio
+  default_voice_id: Emily.wav
+  auto_load_multilingual: true
+paths:
+  model_cache: model_cache
+  output: outputs
+generation_defaults:
+  temperature: 0.01
+  exaggeration: 1
+  cfg_weight: 0
+  seed: 42
+  speed_factor: 1
+  language: ru
+audio_output:
+  format: wav
+  sample_rate: 24000
+  max_reference_duration_sec: 600
+ui_state:
+  last_text: "\u041A\u043E\u0433\u0434\u0430\u0301-\u0442\u043E \u0433\u0435\u0440\
+    \u043E\u0301\u0439 \u0431\u044B\u043B \u043E\u0301\u0444\u0438\u0441\u043D\u044B\
+    \u043C \u0441\u043E\u0442\u0440\u0443\u0301\u0434\u043D\u0438\u043A\u043E\u043C\
+    , \u043D\u0435 \u0448\u0438\u0301\u0431\u043A\u043E \u0440\u0432\u0430\u0301\u0432\
+    \u0448\u0438\u043C\u0441\u044F \u0447\u0435\u0433\u043E\u0301-\u0442\u043E \u0434\
+    \u043E\u0441\u0442\u0438\u0433\u0430\u0301\u0442\u044C \u0432 \u0436\u0438\u0301\
+    \u0437\u043D\u0438."
+  last_voice_mode: clone
+  last_predefined_voice: Adrian.wav
+  last_reference_file: RU_Female_Kropina_YouTube.mp3
+  last_seed: 42
+  last_chunk_size: 280
+  last_split_text_enabled: true
+  hide_chunk_warning: false
+  hide_generation_warning: true
+  theme: dark
+ui:
+  title: Chatterbox TTS Server
+  show_language_select: true
+  max_predefined_voices_in_dropdown: 50
+debug:
+  save_intermediate_audio: false
