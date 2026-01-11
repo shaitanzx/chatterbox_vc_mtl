@@ -726,12 +726,13 @@ def on_reference_upload(files: List[gr.File]):
         # Получаем обновленный список файлов
         all_files = result.get("all_reference_files", [])
         uploaded_files = result.get("uploaded_files", [])
-        print('ssssssssssssssssssssss',uploaded_files)
+        
         if uploaded_files:
             # Выбираем первый загруженный файл по умолчанию
             default_selection = uploaded_files[0] if uploaded_files else "none"
             updated_options = all_files
-            
+            print('ssssssssssssssssssssss',default_selection)
+            print('ssssssssssssssssssssss',updated_options)
             #notification = show_notification(
             #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
             #    ("..." if len(uploaded_files) > 3 else ""),
