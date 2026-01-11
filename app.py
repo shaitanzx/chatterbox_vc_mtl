@@ -739,9 +739,9 @@ def on_reference_upload(files: List[gr.File]):
             #    "success"
             #)
             
-            return gr.update(choices=updated_options,value=files[0])
+            return gr.update(choices=updated_options,value=default_selection)
         else:
-            return gr.update(choices=populateReferenceFiles(),value=files[0])
+            return gr.update(choices=populateReferenceFiles())
             
     except Exception as e:
         logger.error(f"Error in reference upload: {e}", exc_info=True)
