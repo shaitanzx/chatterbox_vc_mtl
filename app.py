@@ -1057,7 +1057,7 @@ def create_gradio_interface():
         
         paste_btn.click(
             fn=on_paste_click,
-            inputs=[text],
+            inputs=[text_area],
             outputs=[text_area]
         )
         
