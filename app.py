@@ -756,7 +756,7 @@ def create_gradio_interface():
                     visible=False
                 )
             
-        with gr.Row()):
+        with gr.Row():
                 # Настройки генерации (аналог Generation Parameters из index.html)
                 with gr.Accordion("🎛 Generation Parameters", open=True):
                     with gr.Row():
@@ -847,7 +847,7 @@ def create_gradio_interface():
                             value=get_audio_output_format(),
                             label="Output Format"
                         )
-        with gr.Row()):                
+        with gr.Row():                
                 # Настройки разделения текста (аналог Split text into chunks)
                 with gr.Accordion("✂️ Text Splitting", open=False):
                     split_text_toggle = gr.Checkbox(
@@ -870,7 +870,7 @@ def create_gradio_interface():
                         interactive=False,
                         visible=True
                     )
-        with gr.Row()):                
+        with gr.Row():                
                 # Режим голоса (аналог Voice Mode)
                 with gr.Accordion("🗣 Voice Mode", open=True):
                     voice_mode_radio = gr.Radio(
@@ -896,7 +896,7 @@ def create_gradio_interface():
                             label="Reference Audio Files",
                             interactive=True
                         )
-        with gr.Row()):                
+        with gr.Row():                
                 # Имя аудиофайла
                 with gr.Accordion("📁 Audio File Name", open=False):
                     audio_name_input = gr.Textbox(
