@@ -908,60 +908,61 @@ def create_gradio_interface():
             These settings are loaded from `config.yaml` via an API call.
             **Restart the server** to apply changes to Host, Port, Model, or Path settings if modified.
             """)
-            with gr.Column():
-                config_server_host = gr.Textbox(
-                    label="Server Host",
-                    value=current_config.get("server", {}).get("host", "127.0.0.1"),
-                    interactive=False
-                    )
-                config_tts_engine_device = gr.Textbox(
-                    label="TTS Device",
-                    value=current_config.get("tts_engine", {}).get("device", "cpu"),
-                    interactive=False
-                    )
-                config_paths_model_cache = gr.Textbox(
-                    label="Model Cache Path",
-                    value=current_config.get("paths", {}).get("model_cache", "./model_cache"),
-                    interactive=False
-                    )
-                config_tts_engine_reference_audio_path = gr.Textbox(
-                    label="Reference Audio Path",
-                    value=current_config.get("tts_engine", {}).get("reference_audio_path", "./reference_audio"),
-                    interactive=True
-                    )
-                config_audio_output_format = gr.Textbox(
-                    label="Audio Output Format",
-                    value=current_config.get("audio_output", {}).get("format", "mp3"),
-                    interactive=True
-                    )
-            with gr.Column():  
-                config_server_port = gr.Number(
-                    label="Server Port",
-                    value=current_config.get("server", {}).get("port", 8004),
-                    precision=0,
-                    interactive=False
-                    )
-                config_tts_engine_default_voice_id = gr.Textbox(
-                    label="Default Voice ID",
-                    value=current_config.get("tts_engine", {}).get("default_voice_id", ""),
-                    interactive=True
-                    )
-                config_tts_engine_predefined_voices_path = gr.Textbox(
-                    label="Predefined Voices Path",
-                    value=current_config.get("tts_engine", {}).get("predefined_voices_path", "./voices"),
-                    interactive=True
-                    )
-                config_paths_output = gr.Textbox(
-                    label="Output Path",
-                    value=current_config.get("paths", {}).get("output", "./outputs"),
-                    interactive=True
-                    )
-                config_audio_output_sample_rate = gr.Number(
-                    label="Audio Sample Rate",
-                    value=current_config.get("audio_output", {}).get("sample_rate", 24000),
-                    precision=0,
-                    interactive=True
-                    )
+            with gr.Row():
+                with gr.Column():
+                    config_server_host = gr.Textbox(
+                        label="Server Host",
+                        value=current_config.get("server", {}).get("host", "127.0.0.1"),
+                        interactive=False
+                        )
+                    config_tts_engine_device = gr.Textbox(
+                        label="TTS Device",
+                        value=current_config.get("tts_engine", {}).get("device", "cpu"),
+                        interactive=False
+                        )
+                    config_paths_model_cache = gr.Textbox(
+                        label="Model Cache Path",
+                        value=current_config.get("paths", {}).get("model_cache", "./model_cache"),
+                        interactive=False
+                        )
+                    config_tts_engine_reference_audio_path = gr.Textbox(
+                        label="Reference Audio Path",
+                        value=current_config.get("tts_engine", {}).get("reference_audio_path", "./reference_audio"),
+                        interactive=True
+                        )
+                    config_audio_output_format = gr.Textbox(
+                        label="Audio Output Format",
+                        value=current_config.get("audio_output", {}).get("format", "mp3"),
+                        interactive=True
+                        )
+                with gr.Column():  
+                    config_server_port = gr.Number(
+                        label="Server Port",
+                        value=current_config.get("server", {}).get("port", 8004),
+                        precision=0,
+                        interactive=False
+                        )
+                    config_tts_engine_default_voice_id = gr.Textbox(
+                        label="Default Voice ID",
+                        value=current_config.get("tts_engine", {}).get("default_voice_id", ""),
+                        interactive=True
+                        )
+                    config_tts_engine_predefined_voices_path = gr.Textbox(
+                        label="Predefined Voices Path",
+                        value=current_config.get("tts_engine", {}).get("predefined_voices_path", "./voices"),
+                        interactive=True
+                        )
+                    config_paths_output = gr.Textbox(
+                        label="Output Path",
+                        value=current_config.get("paths", {}).get("output", "./outputs"),
+                        interactive=True
+                        )
+                    config_audio_output_sample_rate = gr.Number(
+                        label="Audio Sample Rate",
+                        value=current_config.get("audio_output", {}).get("sample_rate", 24000),
+                        precision=0,
+                        interactive=True
+                        )
             
             # Кнопки управления конфигурацией
             with gr.Row():
