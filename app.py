@@ -810,22 +810,28 @@ def create_gradio_interface():
                         size="sm",
                         variant="secondary"
                     )
-                    preset_buttons.append(btn)
-                
-                # Создаем колонки для кнопок пресетов
-                with gr.Row():
-                    for i, btn in enumerate(preset_buttons):
-                        if i < 4:  # Показываем первые 4 в строке
-                            btn.render()
-                
-                # Обработчики для каждой кнопки пресета
-                for preset, btn in zip(appPresets, preset_buttons):
                     btn.click(
                         fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
                         inputs=[],
                         outputs=[text_area, temperature_slider, exaggeration_slider, 
                                 cfg_weight_slider, speed_factor_slider, seed_input]
-                    ) 
+                    )
+#                    preset_buttons.append(btn)
+                
+                # Создаем колонки для кнопок пресетов
+#                with gr.Row():
+#                    for i, btn in enumerate(preset_buttons):
+#                        if i < 4:  # Показываем первые 4 в строке
+#                            btn.render()
+#                
+#                # Обработчики для каждой кнопки пресета
+#                for preset, btn in zip(appPresets, preset_buttons):
+#                    btn.click(
+#                        fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
+#                        inputs=[],
+#                        outputs=[text_area, temperature_slider, exaggeration_slider, 
+#                                cfg_weight_slider, speed_factor_slider, seed_input]
+#                    ) 
 
 
 
