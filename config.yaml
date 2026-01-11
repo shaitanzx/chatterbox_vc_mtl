@@ -15,6 +15,7 @@ tts_engine:
   predefined_voices_path: voices
   reference_audio_path: reference_audio
   default_voice_id: Emily.wav
+  default_voice_clone: RU_Female_AliExpress.mp3
   auto_load_multilingual: true
 paths:
   model_cache: model_cache

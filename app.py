@@ -923,24 +923,25 @@ def create_gradio_interface():
             """)
             with gr.Row():
                 with gr.Column():
-                    config_server_host = gr.Textbox(
-                        label="Server Host",
-                        value=current_config.get("server", {}).get("host", "127.0.0.1"),
-                        interactive=False
-                        )
+                    #config_server_host = gr.Textbox(
+                    #    label="Server Host",
+                    #    value=current_config.get("server", {}).get("host", "127.0.0.1"),
+                    #    interactive=False
+                    #    )
                     config_tts_engine_device = gr.Textbox(
                         label="TTS Device",
                         value=current_config.get("tts_engine", {}).get("device", "cpu"),
                         interactive=False
                         )
-                    config_paths_model_cache = gr.Textbox(
-                        label="Model Cache Path",
-                        value=current_config.get("paths", {}).get("model_cache", "./model_cache"),
-                        interactive=False
-                        )
+
                     config_tts_engine_reference_audio_path = gr.Textbox(
                         label="Reference Audio Path",
                         value=current_config.get("tts_engine", {}).get("reference_audio_path", "./reference_audio"),
+                        interactive=True
+                        )
+                    config_tts_engine_predefined_voices_path = gr.Textbox(
+                        label="Predefined Voices Path",
+                        value=current_config.get("tts_engine", {}).get("predefined_voices_path", "./voices"),
                         interactive=True
                         )
                     config_audio_output_format = gr.Textbox(
@@ -949,20 +950,25 @@ def create_gradio_interface():
                         interactive=True
                         )
                 with gr.Column():  
-                    config_server_port = gr.Number(
-                        label="Server Port",
-                        value=current_config.get("server", {}).get("port", 8004),
-                        precision=0,
+                    config_paths_model_cache = gr.Textbox(
+                        label="Model Cache Path",
+                        value=current_config.get("paths", {}).get("model_cache", "./model_cache"),
                         interactive=False
-                        )
+                        )                    
+                    #config_server_port = gr.Number(
+                    #    label="Server Port",
+                    #    value=current_config.get("server", {}).get("port", 8004),
+                    #    precision=0,
+                    #    interactive=False
+                    #    )
                     config_tts_engine_default_voice_id = gr.Textbox(
-                        label="Default Voice ID",
+                        label="Predefined Voice",
                         value=current_config.get("tts_engine", {}).get("default_voice_id", ""),
                         interactive=True
                         )
-                    config_tts_engine_predefined_voices_path = gr.Textbox(
-                        label="Predefined Voices Path",
-                        value=current_config.get("tts_engine", {}).get("predefined_voices_path", "./voices"),
+                    config_tts_engine_default_voice_clone = gr.Textbox(
+                        label="Clone Voice",
+                        value=current_config.get("tts_engine", {}).get("default_voice_clone", ""),
                         interactive=True
                         )
                     config_paths_output = gr.Textbox(
