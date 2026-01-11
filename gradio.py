@@ -290,9 +290,9 @@ async def upload_reference_audio_endpoint(files: List[gr.File]) -> Dict[str, Any
         "all_reference_files": all_files,
         "errors": errors
     }
-"""
+
 async def upload_predefined_voice_endpoint(files: List[gr.File]) -> Dict[str, Any]:
-    """Original from server.py - upload predefined voice"""
+    #Original from server.py - upload predefined voice
     predefined_voices_path = get_predefined_voices_path(ensure_absolute=True)
     uploaded_filenames = []
     errors = []
@@ -333,7 +333,7 @@ async def upload_predefined_voice_endpoint(files: List[gr.File]) -> Dict[str, An
         "all_predefined_voices": all_voices,
         "errors": errors
     }
-
+"""
 # --- ОСНОВНАЯ TTS ФУНКЦИЯ (аналог custom_tts_endpoint из server.py) ---
 async def custom_tts_endpoint(
     text: str,
