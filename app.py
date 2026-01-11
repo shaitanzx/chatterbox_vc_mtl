@@ -795,7 +795,35 @@ def create_gradio_interface():
                             label="Reference Audio Files",
                             interactive=True
                         )                    
-           
+        # Секция с пресетами
+        with gr.Accordion("📚 Example Presets", open=False):
+            if appPresets:
+                preset_buttons = []
+                for preset in appPresets:
+                    btn = gr.Button(
+                        preset.get("name", "Unnamed"),
+                        size="sm",
+                        variant="secondary"
+                    )
+                    preset_buttons.append(btn)
+                
+                # Создаем колонки для кнопок пресетов
+                with gr.Row():
+                    for i, btn in enumerate(preset_buttons):
+                        if i < 4:  # Показываем первые 4 в строке
+                            btn.render()
+                
+                # Обработчики для каждой кнопки пресета
+                for preset, btn in zip(appPresets, preset_buttons):
+                    btn.click(
+                        fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
+                        inputs=[],
+                        outputs=[text_area, temperature_slider, exaggeration_slider, 
+                                cfg_weight_slider, speed_factor_slider, seed_input]
+                    ) 
+
+                    
+                              
         with gr.Row():
                 # Настройки генерации (аналог Generation Parameters из index.html)
                 with gr.Accordion("🎛 Generation Parameters", open=True):
@@ -915,32 +943,7 @@ def create_gradio_interface():
                     lines=3
                 )
         
-        # Секция с пресетами
-        with gr.Accordion("📚 Example Presets", open=False):
-            if appPresets:
-                preset_buttons = []
-                for preset in appPresets:
-                    btn = gr.Button(
-                        preset.get("name", "Unnamed"),
-                        size="sm",
-                        variant="secondary"
-                    )
-                    preset_buttons.append(btn)
-                
-                # Создаем колонки для кнопок пресетов
-                with gr.Row():
-                    for i, btn in enumerate(preset_buttons):
-                        if i < 4:  # Показываем первые 4 в строке
-                            btn.render()
-                
-                # Обработчики для каждой кнопки пресета
-                for preset, btn in zip(appPresets, preset_buttons):
-                    btn.click(
-                        fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
-                        inputs=[],
-                        outputs=[text_area, temperature_slider, exaggeration_slider, 
-                                cfg_weight_slider, speed_factor_slider, seed_input]
-                    )
+
         
         # Секция с информацией
         with gr.Accordion("💡 Tips & Tricks", open=False):
