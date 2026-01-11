@@ -171,11 +171,12 @@ async def accentuate_text_endpoint(text: str) -> Dict[str, Any]:
         logger.error(f"Error in accentuate_text_endpoint: {e}", exc_info=True)
         return {"status": "error", "detail": f"Accentuation failed: {str(e)}"}
 
-async def get_ui_initial_data() -> Dict[str, Any]:
+def get_ui_initial_data() -> Dict[str, Any]:
     """Original from server.py - get initial UI data"""
-    logger.info("Request for initial UI data")
+    logger.info("+++++++++Request for initial UI data")
     try:
         full_config = get_full_config_for_template()
+        print('++++++++',full_config)
         reference_files = utils.get_valid_reference_files()
         predefined_voices = utils.get_predefined_voices()
         
