@@ -903,7 +903,7 @@ def create_gradio_interface():
                     
                     # Предопределенные голоса
                     with gr.Group(visible=True) as predefined_group:
-                        with gr.Row()
+                        with gr.Row():
                             predefined_voice_select = gr.Dropdown(
                                 choices=populatePredefinedVoices(),
                                 value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
