@@ -747,79 +747,57 @@ def on_reference_upload(files: List[gr.File]):
     except Exception as e:
         logger.error(f"Error in reference upload: {e}", exc_info=True)
         return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
-def toggle_predefined_audio(selected_file: str) -> Tuple[Optional[str], str, Dict, Dict]:
+def toggle_voice_audio(selected_file: str, voice_mode: str) -> Tuple[Optional[str], str, Dict, Dict]:
     """
-    Переключает воспроизведение/остановку выбранного файла Reference Audio.
-    Аудио автоматически начинает воспроизводиться.
+    Универсальная функция для воспроизведения файлов из обоих режимов.
+    voice_mode: "predefined" или "clone"
     """
     global reference_playing_state
     
-    #if not selected_file:
-    #    gr.Warning("⚠️ Please select a reference file")
-    #    return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
+    if not selected_file:
+        gr.Warning("⚠️ Please select a file")
+        return None, "▶️ Play/Stop", gr.update(visible=False), gr.update(visible=False)
     
-    voice_path = get_predefined_voices_path(ensure_absolute=True)
-    file_path = voice_path / selected_file
+    # Определяем путь в зависимости от режима
+    if voice_mode == "predefined":
+        base_path = get_predefined_voices_path(ensure_absolute=True)
+    else:  # clone
+        base_path = get_reference_audio_path(ensure_absolute=True)
+    
+    file_path = base_path / selected_file
     
     # Проверяем существует ли файл
-    #if not file_path.exists():
-    #    reference_playing_state = {"is_playing": False, "current_file": None}
-    #    gr.Error(f"❌ File not found: {selected_file}")
-    #    return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
+    if not file_path.exists():
+        gr.Error(f"❌ File not found: {selected_file}")
+        return None, "▶️ Play/Stop", gr.update(visible=False), gr.update(visible=False)
+    
+    # Создаем уникальный ключ для файла
+    current_key = f"{voice_mode}_{selected_file}"
     
     # Если уже воспроизводится этот файл - останавливаем
-    if reference_playing_state["is_playing"] and reference_playing_state["current_file"] == selected_file:
-        reference_playing_state = {"is_playing": False, "current_file": None}
+    if reference_playing_state["is_playing"] and reference_playing_state["current_key"] == current_key:
+        reference_playing_state = {"is_playing": False, "current_key": None}
         gr.Info(f"⏸️ Stopped: {selected_file}")
-        return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
+        return None, "▶️ Play/Stop", gr.update(visible=False), gr.update(visible=False)
     
-    # Начинаем воспроизведение нового файла с автозапуском
-    reference_playing_state = {"is_playing": True, "current_file": selected_file}
+    # Начинаем воспроизведение
+    reference_playing_state = {"is_playing": True, "current_key": current_key}
     gr.Info(f"🎵 Playing: {selected_file}")
     
     return (
         str(file_path),  # путь к файлу
         "⏸️ Play/Stop",  # текст кнопки
-        gr.update(visible=True, autoplay=True),  # аудиоплеер с автозапуском
-        gr.update(visible=True)  # делаем плеер видимым
+        gr.update(visible=True),  # показываем плеер
+        gr.update(value=str(file_path), autoplay=True)  # устанавливаем файл и автозапуск
     )
+def reset_playback_on_mode_change(voice_mode: str) -> Tuple[str, str, Dict]:
+    """
+    Сбрасывает воспроизведение при смене режима голоса.
+    """
+    global reference_playing_state
+    reference_playing_state = {"is_playing": False, "current_key": None}
+    return "▶️ Play/Stop", "▶️ Play/Stop", gr.update(visible=False)
 
-def toggle_reference_audio(selected_file: str) -> Tuple[Optional[str], str, Dict, Dict]:
-    """
-    Переключает воспроизведение/остановку выбранного файла Reference Audio.
-    Аудио автоматически начинает воспроизводиться.
-    """
-    global reference_playing_state
-    
-    #if not selected_file:
-    #    gr.Warning("⚠️ Please select a reference file")
-    #    return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
-    
-    ref_path = get_reference_audio_path(ensure_absolute=True)
-    file_path = ref_path / selected_file
-    
-    # Проверяем существует ли файл
-    #if not file_path.exists():
-    #    reference_playing_state = {"is_playing": False, "current_file": None}
-    #    gr.Error(f"❌ File not found: {selected_file}")
-    #    return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
-    
-    # Если уже воспроизводится этот файл - останавливаем
-    if reference_playing_state["is_playing"] and reference_playing_state["current_file"] == selected_file:
-        reference_playing_state = {"is_playing": False, "current_file": None}
-        gr.Info(f"⏸️ Stopped: {selected_file}")
-        return None, "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
-    
-    # Начинаем воспроизведение нового файла с автозапуском
-    reference_playing_state = {"is_playing": True, "current_file": selected_file}
-    gr.Info(f"🎵 Playing: {selected_file}")
-    
-    return (
-        str(file_path),  # путь к файлу
-        "⏸️ Play/Stop",  # текст кнопки
-        gr.update(visible=True, autoplay=True),  # аудиоплеер с автозапуском
-        gr.update(visible=True)  # делаем плеер видимым
-    )
 
 #def on_reference_selection_change(selected_file: str) -> Tuple[str, Dict, Dict]:
 #    """
@@ -1201,25 +1179,25 @@ def create_gradio_interface():
         
         # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
         predefined_play_btn.click(
-            fn=toggle_reference_audio,
+            fn=lambda file: toggle_voice_audio(file, "predefined"),
             inputs=[predefined_voice_select],
             outputs=[
                 reference_audio_player,  # основной аудиоплеер
-                reference_play_btn,      # текст кнопки
-                reference_audio_player,  # обновление видимости и autoplay
-                reference_audio_player   # делаем видимым
+                predefined_play_btn,     # текст кнопки
+                reference_audio_player,  # видимость
+                reference_audio_player   # autoplay
             ]
         )
         
         
         reference_play_btn.click(
-            fn=toggle_reference_audio,
+            fn=lambda file: toggle_voice_audio(file, "clone"),
             inputs=[reference_file_select],
             outputs=[
                 reference_audio_player,  # основной аудиоплеер
                 reference_play_btn,      # текст кнопки
-                reference_audio_player,  # обновление видимости и autoplay
-                reference_audio_player   # делаем видимым
+                reference_audio_player,  # видимость
+                reference_audio_player   # autoplay
             ]
         )
         reference_upload_btn.upload(
