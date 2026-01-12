@@ -1209,7 +1209,7 @@ def create_gradio_interface():
                 reference_audio_player,  # обновление видимости и autoplay
                 reference_audio_player   # делаем видимым
             ]
-        
+        )
         
         
         reference_play_btn.click(
