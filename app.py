@@ -1202,7 +1202,7 @@ def create_gradio_interface():
         # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
         predefined_play_btn.click(
             fn=toggle_reference_audio,
-            inputs=[predefined_file_select],
+            inputs=[predefined_voice_select],
             outputs=[
                 reference_audio_player,  # основной аудиоплеер
                 reference_play_btn,      # текст кнопки
