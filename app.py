@@ -1072,9 +1072,9 @@ def create_gradio_interface():
                 - Experiment with **Temperature** and other generation parameters to fine-tune output.
                 """)
 
-        gr.Tabs("⚙️ Server Configuration")
+        with gr.Tabs("⚙️ Server Configuration")
         # Секция конфигурации сервера (аналог Server Configuration из index.html)
-            with gr.Accordion("⚙️ Server Configuration", open=False):
+            #with gr.Accordion("⚙️ Server Configuration", open=False):
                 gr.Markdown("""
                 These settings are loaded from `config.yaml` via an API call.
                 **Restart the server** to apply changes to Host, Port, Model, or Path settings if modified.
