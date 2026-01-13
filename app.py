@@ -862,217 +862,217 @@ def create_gradio_interface():
         
         # Заголовок (аналог navbar из index.html)
         gr.Markdown(f"# 🎤 {get_ui_title()}")
-        
-
         with gr.Tab("MTL"):
+
+            with gr.Tab("MTL"):
         
-            with gr.Row():
-                    gr.Markdown("### Text to synthesize")
-            with gr.Row():
-                    gr.Markdown("Enter the text you want to convert to speech. For audiobooks, you can paste long chapters.")
-            with gr.Row():    
-                    text_area = gr.Textbox(
-                        label="",
-                        value=current_config.get("ui_state", {}).get("last_text", "\u041A\u043E\u0433\u0434\u0430\u0301-\u0442\u043E \u0433\u0435\u0440\
+                with gr.Row():
+                        gr.Markdown("### Text to synthesize")
+                with gr.Row():
+                        gr.Markdown("Enter the text you want to convert to speech. For audiobooks, you can paste long chapters.")
+                with gr.Row():    
+                        text_area = gr.Textbox(
+                            label="",
+                            value=current_config.get("ui_state", {}).get("last_text", "\u041A\u043E\u0433\u0434\u0430\u0301-\u0442\u043E \u0433\u0435\u0440\
     \u043E\u0301\u0439 \u0431\u044B\u043B \u043E\u0301\u0444\u0438\u0441\u043D\u044B\
     \u043C \u0441\u043E\u0442\u0440\u0443\u0301\u0434\u043D\u0438\u043A\u043E\u043C\
     , \u043D\u0435 \u0448\u0438\u0301\u0431\u043A\u043E \u0440\u0432\u0430\u0301\u0432\
     \u0448\u0438\u043C\u0441\u044F \u0447\u0435\u0433\u043E\u0301-\u0442\u043E \u0434\
     \u043E\u0441\u0442\u0438\u0433\u0430\u0301\u0442\u044C \u0432 \u0436\u0438\u0301\
     \u0437\u043D\u0438."),
-                        placeholder="Enter text here...",
-                        lines=8,
-                        max_lines=15,
-                        show_copy_button=False,
-                        elem_id="text"
-                    )
-            with gr.Row():        
-                    char_count = gr.Textbox(
-                            label="Characters",
-                            value="94",
-                            interactive=False,
-                            scale=1,
-                            elem_id="char-count"
+                            placeholder="Enter text here...",
+                            lines=8,
+                            max_lines=15,
+                            show_copy_button=False,
+                            elem_id="text"
                         )
+                with gr.Row():        
+                        char_count = gr.Textbox(
+                                label="Characters",
+                                value="94",
+                                interactive=False,
+                                scale=1,
+                                elem_id="char-count"
+                            )   
                     
                 # Кнопки действий (аналог flex-wrap из index.html)
-            with gr.Row():
-                    generate_btn = gr.Button("🎵 Generate Speech",elem_id="generate-btn")
-                    accent_btn = gr.Button("🇷🇺 Stress")
-            with gr.Row():        
+                with gr.Row():
+                        generate_btn = gr.Button("🎵 Generate Speech",elem_id="generate-btn")
+                        accent_btn = gr.Button("🇷🇺 Stress")
+                with gr.Row():        
                     # Уведомления (аналог popup-msg)
-                    notification_display = gr.JSON(
-                        label="Notifications",
-                        value={},
-                        visible=False
-                    )
-            with gr.Group():
-                with gr.Row():                
+                        notification_display = gr.JSON(
+                            label="Notifications",
+                            value={},
+                            visible=False
+                        )
+                with gr.Group():
+                    with gr.Row():                
                 # Настройки разделения текста (аналог Split text into chunks)
-                        split_text_toggle = gr.Checkbox(
-                            label="Split text into chunks",
-                            value=True
-                        )
-                with gr.Row():            
-                        chunk_size_slider = gr.Slider(
-                            minimum=50,
-                            maximum=1000,
-                            value=120,
-                            step=10,
-                            label="Chunk Size",
-                            visible=True
-                        )
-            with gr.Row():                
-                # Режим голоса (аналог Voice Mode)
-                    with gr.Accordion("🗣 Voice Mode", open=True):
-                        voice_mode_radio = gr.Radio(
-                            choices=["predefined", "clone"],
-                            value="predefined",
-                            label="Select Voice Mode"
-                        )
+                            split_text_toggle = gr.Checkbox(
+                                label="Split text into chunks",
+                                value=True
+                            )
+                    with gr.Row():            
+                            chunk_size_slider = gr.Slider(
+                                minimum=50,
+                                maximum=1000,
+                                value=120,
+                                step=10,
+                                label="Chunk Size",
+                                visible=True
+                            )
+                with gr.Row():                
+                    # Режим голоса (аналог Voice Mode)
+                        with gr.Accordion("🗣 Voice Mode", open=True):
+                            voice_mode_radio = gr.Radio(
+                                choices=["predefined", "clone"],
+                                value="predefined",
+                                label="Select Voice Mode"
+                            )
                     
                     # Предопределенные голоса
-                        with gr.Group(visible=True) as predefined_group:
-                            with gr.Row():
-                                predefined_voice_select = gr.Dropdown(
-                                    choices=populatePredefinedVoices(),
-                                    value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
-                                    label="Predefined Voices",
-                                    interactive=True
-                                )
-                            with gr.Row():    
-                                predefined_play_btn = gr.Button("▶️ Play/Stop")
+                            with gr.Group(visible=True) as predefined_group:
+                                with gr.Row():
+                                    predefined_voice_select = gr.Dropdown(
+                                        choices=populatePredefinedVoices(),
+                                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
+                                        label="Predefined Voices",
+                                        interactive=True
+                                    )
+                                with gr.Row():    
+                                    predefined_play_btn = gr.Button("▶️ Play/Stop")
                     
                     # Референсные файлы для клонирования
-                        with gr.Group(visible=False) as clone_group:
-                            with gr.Row():
-                                reference_file_select = gr.Dropdown(
-                                    choices=populateReferenceFiles(),
-                                    value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
-                                    label="Reference Audio Files",
-                                    interactive=True
-                                )
-                            with gr.Row(): 
-                                reference_play_btn = gr.Button("▶️ Play/Stop")
+                            with gr.Group(visible=False) as clone_group:
+                                with gr.Row():
+                                    reference_file_select = gr.Dropdown(
+                                        choices=populateReferenceFiles(),
+                                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
+                                        label="Reference Audio Files",
+                                        interactive=True
+                                    )
+                                with gr.Row(): 
+                                    reference_play_btn = gr.Button("▶️ Play/Stop")
                         # Кнопки для работы с референсными файлами ТОЛЬКО ЗДЕСЬ
-                            with gr.Row():
-                                reference_upload_btn = gr.UploadButton("📁 Upload Reference Audio",
-                                    file_types=[".wav", ".mp3"],
-                                    file_count="single",
-                                    visible=True
-                                )
-
-                        reference_audio_player = gr.Audio(
-                                visible=False,
-                                label="",
-                                interactive=False,
-                                show_label=False,
-                                elem_id="reference-audio-player",
-                                autoplay=False  # изначально выключено
-                            )  
-                        reference_audio_trigger = gr.Audio(
-                                visible=False,
-                                elem_id="reference-audio-trigger"
-                            )      
-
-
-
-
-            with gr.Row():
-                    # Настройки генерации (аналог Generation Parameters из index.html)
-                    with gr.Accordion("🎛 Generation Parameters", open=True):
-                        with gr.Row():
-                            with gr.Column():
-                                temperature_slider = gr.Slider(
-                                    minimum=0.0,
-                                    maximum=1.5,
-                                    value=get_gen_default_temperature(),
-                                    step=0.01,
-                                    label="Temperature"
-                                    )
-                                cfg_weight_slider = gr.Slider(
-                                    minimum=0.0,
-                                    maximum=2.0,
-                                    value=get_gen_default_cfg_weight(),
-                                    step=0.01,
-                                    label="CFG Weight"
-                                    )
-                                seed_input = gr.Number(
-                                    value=get_gen_default_seed(),
-                                    label="Generation Seed (0 or -1 for random)"
-                                    )
-                            with gr.Column():
-                                exaggeration_slider = gr.Slider(
-                                    minimum=0.0,
-                                    maximum=2.0,
-                                    value=get_gen_default_exaggeration(),
-                                    step=0.01,
-                                    label="Exaggeration"
-                                    )
-                                speed_factor_slider = gr.Slider(
-                                    minimum=0.25,
-                                    maximum=4.0,
-                                    value=get_gen_default_speed_factor(),
-                                    step=0.05,
-                                    label="Speed Factor"
-                                    )
-                                language_select = gr.Dropdown(
-                                    choices=language_options,
-                                    value=current_config.get("generation_defaults", {}).get("language", "English (en)"),
-                                    label="Language",
-                                    interactive=True
+                                with gr.Row():
+                                    reference_upload_btn = gr.UploadButton("📁 Upload Reference Audio",
+                                        file_types=[".wav", ".mp3"],
+                                        file_count="single",
+                                        visible=True
                                     )
 
-            with gr.Accordion("📚 Example Presets", open=False):
+                            reference_audio_player = gr.Audio(
+                                    visible=False,
+                                    label="",
+                                    interactive=False,
+                                    show_label=False,
+                                    elem_id="reference-audio-player",
+                                    autoplay=False  # изначально выключено
+                                )  
+                            reference_audio_trigger = gr.Audio(
+                                    visible=False,
+                                    elem_id="reference-audio-trigger"
+                                )      
+
+
+
+
                 with gr.Row():
-                    if appPresets:
-                        preset_buttons = []
-                        for preset in appPresets:
-                            btn = gr.Button(
-                                preset.get("name", "Unnamed"),
-                                size="sm",
-                                variant="secondary"
-                            )
-                            btn.click(
-                                fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
-                                inputs=[],
-                                outputs=[temperature_slider, exaggeration_slider, 
-                                        cfg_weight_slider, speed_factor_slider, seed_input]
-                                )
+                    # Настройки генерации (аналог Generation Parameters из index.html)
+                        with gr.Accordion("🎛 Generation Parameters", open=True):
+                            with gr.Row():
+                                with gr.Column():
+                                    temperature_slider = gr.Slider(
+                                        minimum=0.0,
+                                        maximum=1.5,
+                                        value=get_gen_default_temperature(),
+                                        step=0.01,
+                                        label="Temperature"
+                                        )   
+                                    cfg_weight_slider = gr.Slider(
+                                        minimum=0.0,
+                                        maximum=2.0,
+                                        value=get_gen_default_cfg_weight(),
+                                        step=0.01,
+                                        label="CFG Weight"
+                                        )
+                                    seed_input = gr.Number(
+                                        value=get_gen_default_seed(),
+                                        label="Generation Seed (0 or -1 for random)"
+                                        )
+                                with gr.Column():
+                                    exaggeration_slider = gr.Slider(
+                                        minimum=0.0,
+                                        maximum=2.0,
+                                        value=get_gen_default_exaggeration(),
+                                        step=0.01,
+                                        label="Exaggeration"
+                                        )
+                                    speed_factor_slider = gr.Slider(
+                                        minimum=0.25,
+                                        maximum=4.0,
+                                        value=get_gen_default_speed_factor(),
+                                        step=0.05,
+                                        label="Speed Factor"
+                                        )
+                                    language_select = gr.Dropdown(
+                                        choices=language_options,
+                                        value=current_config.get("generation_defaults", {}).get("language", "English (en)"),
+                                        label="Language",
+                                        interactive=True
+                                        )
 
-            with gr.Row():                
+                with gr.Accordion("📚 Example Presets", open=False):
+                    with gr.Row():
+                        if appPresets:
+                            preset_buttons = []
+                            for preset in appPresets:
+                                btn = gr.Button(
+                                    preset.get("name", "Unnamed"),
+                                    size="sm",
+                                    variant="secondary"
+                                )
+                                btn.click(
+                                    fn=lambda p=preset: applyPreset(p.get("name", ""), appPresets),
+                                    inputs=[],
+                                    outputs=[temperature_slider, exaggeration_slider, 
+                                            cfg_weight_slider, speed_factor_slider, seed_input]
+                                    )
+
+                with gr.Row():                
                 # Имя аудиофайла
-                    with gr.Accordion("📁 Audio File Name", open=False):
-                        audio_name_input = gr.Textbox(
-                            label="Custom Audio Name",
-                            placeholder="Enter custom name (without extension)",
-                            value=""
-                        )
+                        with gr.Accordion("📁 Audio File Name", open=False):
+                            audio_name_input = gr.Textbox(
+                                label="Custom Audio Name",
+                                placeholder="Enter custom name (without extension)",
+                                value=""
+                            )
         
         # Секция с результатами
-            with gr.Row():
-                with gr.Column():
+                with gr.Row():
+                    with gr.Column():
                 # Аудиоплеер
-                    audio_output = gr.Audio(
-                        label="Generated Audio",
-                        type="filepath",
-                        interactive=False,
-                        visible=False
-                    )
+                        audio_output = gr.Audio(
+                            label="Generated Audio",
+                            type="filepath",
+                            interactive=False,
+                            visible=False
+                        )
                 
               
 
         
         # Секция с информацией
-            with gr.Accordion("💡 Tips & Tricks", open=False):
-                gr.Markdown("""
-                - For **Audiobooks**, use **MP3** format, enable **Split text**, and set a chunk size of ~250-500.
-                - Use **Predefined Voices** for consistent, high-quality output.
-                - For **Voice Cloning**, upload clean reference audio (`.wav`/`.mp3`). Quality of reference is key.
-                - Experiment with **Temperature** and other generation parameters to fine-tune output.
-                """)
+                with gr.Accordion("💡 Tips & Tricks", open=False):
+                    gr.Markdown("""
+                    - For **Audiobooks**, use **MP3** format, enable **Split text**, and set a chunk size of ~250-500.
+                    - Use **Predefined Voices** for consistent, high-quality output.
+                    - For **Voice Cloning**, upload clean reference audio (`.wav`/`.mp3`). Quality of reference is key.
+                    - Experiment with **Temperature** and other generation parameters to fine-tune output.
+                    """)
 
-        with gr.Tabs("⚙️ Server Configuration"):
+            with gr.Tabs("⚙️ Server Configuration"):
         # Секция конфигурации сервера (аналог Server Configuration из index.html)
             #with gr.Accordion("⚙️ Server Configuration", open=False):
                 gr.Markdown("""
