@@ -242,7 +242,7 @@ def save_settings_endpoint(config_tts_engine_device, reference_audio_path, prede
     """Original from server.py - save settings"""
     logger.info("Saving settings")
     try:
-        setting_data = {
+        settings_data = {
             "tts_engine": {
                 "device": config_tts_engine_device,
                 "reference_audio_path": reference_audio_path,
