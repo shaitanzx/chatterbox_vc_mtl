@@ -871,6 +871,7 @@ def create_gradio_interface():
                     vc_input_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input Audio (to convert)")
                     vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
                 vc_pitch_shift = gr.Number(value=0, label="Pitch", step=0.5, interactive=True)
+                disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
                 vc_convert_btn = gr.Button("Run Voice Conversion")
                 vc_output_files = gr.Files(label="Converted VC Audio File(s)")
                 vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True)
