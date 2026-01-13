@@ -255,11 +255,11 @@ def save_settings_endpoint(config_tts_engine_device, reference_audio_path, prede
                 "output": config_paths_output
             },
             "generation_defaults": {
-                "temperature": str(temperature_slider),
-                "exaggeration": str(exaggeration_slider),
-                "cfg_weight": str(cfg_weight_slider),
+                "temperature": temperature_slider,
+                "exaggeration": exaggeration_slider,
+                "cfg_weight": cfg_weight_slider,
                 "seed": seed_input,
-                "speed_factor": str(speed_factor_slider),
+                "speed_factor": speed_factor_slider,
                 "language": extract_language_code(language)
             },
             "audio_output": {
