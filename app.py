@@ -236,7 +236,7 @@ def get_ui_initial_data() -> Dict[str, Any]:
         logger.error(f"Error preparing initial UI data: {e}", exc_info=True)
         return {"error": "Failed to load initial data"}
 
-def save_settings_endpoint((settings_data: Dict[str, Any]) -> Dict[str, Any]):
+def save_settings_endpoint(settings_data: Dict[str, Any]) -> Dict[str, Any]):
     """Original from server.py - save settings"""
     logger.info("Saving settings")
     try:
