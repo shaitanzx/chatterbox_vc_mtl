@@ -1211,7 +1211,7 @@ def create_gradio_interface():
             inputs=[config_tts_engine_device, config_tts_engine_reference_audio_path, config_tts_engine_predefined_voices_path, 
                 config_tts_engine_default_voice_id, config_tts_engine_default_voice_clone,
                 config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
-                speed_factor_slider, language, config_audio_output_format,config_audio_output_sample_rate]
+                speed_factor_slider, language_select, config_audio_output_format,config_audio_output_sample_rate]
         )
         
         reference_play_btn.click(
