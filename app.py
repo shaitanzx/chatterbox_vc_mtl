@@ -989,7 +989,7 @@ def get_play_component(current_config):
                                     reference_audio_player   # autoplay
                                     ]
                                 )
-                                def on_reference_upload(files: List[gr.File]):
+                            def on_reference_upload(files: List[gr.File]):
                                 """
                                 Обработчик загрузки референсных файлов.
                                 Автоматически обновляет список файлов после загрузки.
