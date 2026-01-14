@@ -1160,7 +1160,7 @@ def create_gradio_interface():
                                 label="Chunk Size",
                                 visible=True
                             )
-                    voice_mode_radio, predefined_voice_select, reference_file_select = get_play_component(current_config)
+                voice_mode_radio, predefined_voice_select, reference_file_select = get_play_component(current_config)
 
 #####################################                            
              
