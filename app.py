@@ -1115,7 +1115,7 @@ def create_gradio_interface():
                                 with gr.Row():
                                     reference_upload_btn = gr.UploadButton("📁 Upload Reference Audio",
                                         file_types=[".wav", ".mp3"],
-                                        file_count="single",
+                                        file_count="multiple",
                                         visible=True
                                     )
 
