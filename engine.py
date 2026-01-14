@@ -2,9 +2,7 @@
 # Core TTS model loading and speech generation logic.
 import os
 os.environ["TRANSFORMERS_ATTN_IMPLEMENTATION"] = "eager"
-model_cache_root = "./models/hf_cache"  # или любой другой путь
-print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',os.path.abspath(model_cache_root))
-os.environ["HF_HOME"] = os.path.abspath(model_cache_root)
+print("HF_HOME:", os.environ.get("HF_HOME", "Не установлена"))
 import logging
 import random
 import numpy as np

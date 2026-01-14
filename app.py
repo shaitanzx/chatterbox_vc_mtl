@@ -3,6 +3,9 @@
 # Основано на server.py, script.js и index.html
 
 import os
+model_cache_root = "./models/hf_cache"  # или любой другой путь
+print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',os.path.abspath(model_cache_root))
+os.environ["HF_HOME"] = os.path.abspath(model_cache_root)
 from pathlib import Path
 import gradio as gr
 import torch
