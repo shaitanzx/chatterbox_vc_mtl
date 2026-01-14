@@ -312,7 +312,7 @@ def load_model() -> bool:
         try:
             # Пытаемся загрузить VC модель
             logger.info("⬇️  Загрузка Voice Conversion модели...")
-            vc_model = ChatterboxVoiceConversion.from_pretrained(device=model_device)
+            vc_model = ChatterboxVC.from_pretrained(device=model_device)
             VC_MODEL_LOADED = True
             logger.info(f"✅ Voice Conversion модель загружена на устройство: {model_device}")
             
