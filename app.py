@@ -997,7 +997,7 @@ def get_play_component(current_config):
     #if not files:
     #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
     
-                                    try:
+                                try:
         # Вызываем оригинальную функцию загрузки
                                         result =  upload_reference_audio_endpoint(files)
         
@@ -1024,7 +1024,7 @@ def get_play_component(current_config):
                                         else:
                                             return gr.update(choices=populateReferenceFiles())
             
-                                    except Exception as e:
+                                except Exception as e:
                                         logger.error(f"Error in reference upload: {e}", exc_info=True)
                                         return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
                             reference_upload_btn.upload(
