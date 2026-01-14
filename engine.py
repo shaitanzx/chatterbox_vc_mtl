@@ -34,7 +34,10 @@ from chatterbox.models.tokenizers import MTLTokenizer
 from chatterbox.mtl_tts import Conditionals, SUPPORTED_LANGUAGES # Need to import these too
 
 from chatterbox.vc import ChatterboxVC
-
+MODEL_PATHS = {
+    "tts": "./model_cache/mtl",  # ← ИЗМЕНИТЕ ЭТОТ ПУТЬ
+    "vc": "./model_cache/vc"  # ← ИЗМЕНИТЕ ЭТОТ ПУТЬ
+}
 
 
 class PatchedChatterboxTTS(ChatterboxMultilingualTTS):
@@ -185,12 +188,8 @@ def load_model() -> bool:
     Loads the multilingual TTS model by default.
     """
     global chatterbox_model, MODEL_LOADED, model_device, multilingual_model, MULTILINGUAL_MODEL_LOADED
+    global vc_model, VC_MODEL_LOADED
 
-
-    global vc_model, VC_MODEL_LOADED  # ← ДОБАВИТЬ ЭТО
-    
-    
-    
     if MODEL_LOADED:
         logger.info("TTS model is already loaded.")
         return True
@@ -252,9 +251,12 @@ def load_model() -> bool:
         model_device = resolved_device_str
         logger.info(f"Final device selection: {model_device}")
 
-        # Load the multilingual engine immediately
-        
-        multilingual_model = PatchedChatterboxTTS.from_pretrained(device=model_device)
+        # Load the multilingual engine from custom path
+        logger.info(f"Loading TTS model from: {MODEL_PATHS['tts']}")
+        multilingual_model = PatchedChatterboxTTS.from_pretrained(
+            model_name=MODEL_PATHS['tts'],  # Используем кастомный путь
+            device=model_device
+        )
         chatterbox_model = multilingual_model
         MULTILINGUAL_MODEL_LOADED = True
         MODEL_LOADED = True
@@ -262,19 +264,20 @@ def load_model() -> bool:
         logger.info(f"PatchedChatterboxTTS model loaded successfully on {model_device}.")
         logger.info("Multilingual model is now the default for ALL languages.")
 
+        # Загружаем VC модель из кастомного пути
         try:
-            # Пытаемся загрузить VC модель (но не прерываем загрузку если не получится)
-            logger.info(f"Attempting to load Voice Conversion model on {model_device}...")
-            vc_model = ChatterboxVC.from_pretrained(device=model_device)
+            logger.info(f"Loading Voice Conversion model from: {MODEL_PATHS['vc']}")
+            vc_model = ChatterboxVC.from_pretrained(
+                model_name=MODEL_PATHS['vc'],  # Используем кастомный путь
+                device=model_device
+            )
             VC_MODEL_LOADED = True
             logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
         except Exception as vc_e:
             logger.warning(f"Failed to load Voice Conversion model: {vc_e}")
             logger.warning("Voice Conversion tab will not be available.")
-            # Не сбрасываем флаг загрузки основной модели даже если VC не загрузилась
             vc_model = None
             VC_MODEL_LOADED = False
-
 
         return True
 
@@ -284,6 +287,40 @@ def load_model() -> bool:
         chatterbox_model = None
         MULTILINGUAL_MODEL_LOADED = False
         MODEL_LOADED = False
+        return False
+
+
+def load_vc_model() -> bool:
+    """
+    Загружает модель Voice Conversion.
+    """
+    global vc_model, VC_MODEL_LOADED, model_device
+    
+    if VC_MODEL_LOADED:
+        logger.info("Voice Conversion model is already loaded.")
+        return True
+    
+    if model_device is None:
+        logger.error("Main model device not determined. Load main model first.")
+        return False
+    
+    try:
+        logger.info(f"Loading Voice Conversion model from: {MODEL_PATHS['vc']}")
+        
+        # Загружаем модель VC из кастомного пути
+        vc_model = ChatterboxVC.from_pretrained(
+            model_name=MODEL_PATHS['vc'],
+            device=model_device
+        )
+        VC_MODEL_LOADED = True
+        
+        logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error loading Voice Conversion model: {e}", exc_info=True)
+        vc_model = None
+        VC_MODEL_LOADED = False
         return False
 
 
@@ -313,9 +350,11 @@ def load_multilingual_model() -> bool:
         logger.info("Standard model unloaded and memory cleared.")
 
     try:
-        logger.info(f"Loading multilingual model (PatchedChatterboxTTS) on {model_device}...")
-
-        multilingual_model = PatchedChatterboxTTS.from_pretrained(device=model_device)
+        logger.info(f"Loading multilingual model from: {MODEL_PATHS['tts']}")
+        multilingual_model = PatchedChatterboxTTS.from_pretrained(
+            model_name=MODEL_PATHS['tts'],
+            device=model_device
+        )
 
         chatterbox_model = multilingual_model
 
@@ -332,36 +371,6 @@ def load_multilingual_model() -> bool:
         chatterbox_model = None
         MULTILINGUAL_MODEL_LOADED = False
         MODEL_LOADED = False
-        return False
-#####################
-def load_vc_model() -> bool:
-    """
-    Загружает модель Voice Conversion.
-    """
-    global vc_model, VC_MODEL_LOADED, model_device
-    
-    if VC_MODEL_LOADED:
-        logger.info("Voice Conversion model is already loaded.")
-        return True
-    
-    if model_device is None:
-        logger.error("Main model device not determined. Load main model first.")
-        return False
-    
-    try:
-        logger.info(f"Loading Voice Conversion model on {model_device}...")
-        
-        # Загружаем модель VC
-        vc_model = ChatterboxVC.from_pretrained(device=model_device)
-        VC_MODEL_LOADED = True
-        
-        logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
-        return True
-        
-    except Exception as e:
-        logger.error(f"Error loading Voice Conversion model: {e}", exc_info=True)
-        vc_model = None
-        VC_MODEL_LOADED = False
         return False
 
 
