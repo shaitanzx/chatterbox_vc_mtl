@@ -49,7 +49,7 @@ model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache",
 # Устанавливаем переменные окружения ПЕРЕД любыми импортами huggingface
 os.environ["HF_HOME"] = str(model_cache_path)
 os.environ["HF_HUB_CACHE"] = str(model_cache_path)
-#os.environ["TRANSFORMERS_CACHE"] = str(model_cache_path)
+os.environ["TRANSFORMERS_CACHE"] = str(model_cache_path)
 os.environ["TORCH_HOME"] = str(model_cache_path)
 os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_cache_path)
 os.environ["XDG_CACHE_HOME"] = str(model_cache_path.parent)
@@ -1356,45 +1356,14 @@ def create_gradio_interface():
 def main():
     """Запуск Gradio сервера"""
     
-    # Выводим информацию о кэше ПЕРЕД загрузкой моделей
-    logger.info("=" * 60)
-    logger.info("🚀 ИНИЦИАЛИЗАЦИЯ TTS СЕРВЕРА")
-    logger.info(f"📁 Путь к кэшу моделей: {model_cache_path}")
-    logger.info(f"📁 Абсолютный путь: {model_cache_path.absolute()}")
-    logger.info("=" * 60)
-    
     # Загрузка TTS модели
-    logger.info("⬇️  Загрузка TTS модели...")
+    logger.info("Initializing TTS Server...")
     
     if not engine.load_model():
         logger.critical("CRITICAL: TTS Model failed to load on startup.")
         return
     
-    # После загрузки получаем детальную информацию
-    logger.info("=" * 60)
-    logger.info("✅ МОДЕЛИ УСПЕШНО ЗАГРУЖЕНЫ")
-    
-    # Получаем информацию через функцию get_model_info
-    try:
-        model_info = engine.get_model_info() if hasattr(engine, 'get_model_info') else {}
-        
-        if isinstance(model_info, dict) and "status" in model_info:
-            status = model_info["status"]
-            logger.info(f"  • TTS модель: {'✅ ЗАГРУЖЕНА' if status.get('tts_loaded') else '❌ НЕ ЗАГРУЖЕНА'}")
-            logger.info(f"  • VC модель: {'✅ ЗАГРУЖЕНА' if status.get('vc_loaded') else '❌ НЕ ЗАГРУЖЕНА'}")
-            logger.info(f"  • Устройство: {status.get('device', 'unknown')}")
-            logger.info(f"  • Путь кэша: {status.get('cache_path', 'unknown')}")
-            
-            if "cache_info" in model_info:
-                cache = model_info["cache_info"]
-                if cache.get("exists"):
-                    logger.info(f"  • Размер кэша: {cache.get('total_size_mb', 0):.1f} MB")
-                    logger.info(f"  • Моделей в кэше: {cache.get('model_count', 0)}")
-    
-    except Exception as e:
-        logger.warning(f"Не удалось получить детальную информацию о моделях: {e}")
-    
-    logger.info("=" * 60)
+    logger.info("TTS Model loaded successfully via engine.")
     
     # Создание интерфейса
     demo = create_gradio_interface()
@@ -1403,8 +1372,8 @@ def main():
     server_host = get_host()
     server_port = get_port()
     
-    logger.info(f"🌐 Запуск TTS Сервера на http://{server_host}:{server_port}")
-    logger.info(f"🖥️  Веб-интерфейс доступен по адресу http://{server_host}:{server_port}")
+    logger.info(f"Starting TTS Server on http://{server_host}:{server_port}")
+    logger.info(f"Web UI available at http://{server_host}:{server_port}")
     
     # Запуск Gradio
     demo.launch(share=True)
