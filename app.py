@@ -743,44 +743,7 @@ async def on_restart_click() -> Dict[str, str]:
     # В Gradio просто показываем сообщение
     return show_notification("🔄 Server restart initiated...", "info")
 
-def on_reference_upload(files: List[gr.File]):
-    """
-    Обработчик загрузки референсных файлов.
-    Автоматически обновляет список файлов после загрузки.
-    """
-    #if not files:
-    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
-    
-    try:
-        # Вызываем оригинальную функцию загрузки
-        result =  upload_reference_audio_endpoint(files)
-        
-        #if "errors" in result and result["errors"]:
-        #    error_msg = result["errors"][0].get("error", "Upload failed")
-        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
-        
-        # Получаем обновленный список файлов
-        all_files = result.get("all_reference_files", [])
-        uploaded_files = result.get("uploaded_files", [])
-        
-        if uploaded_files:
-            # Выбираем первый загруженный файл по умолчанию
-            default_selection = uploaded_files[0] if uploaded_files else "none"
-            updated_options = all_files
 
-            #notification = show_notification(
-            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
-            #    ("..." if len(uploaded_files) > 3 else ""),
-            #    "success"
-            #)
-            
-            return gr.update(choices=updated_options,value=default_selection)
-        else:
-            return gr.update(choices=populateReferenceFiles())
-            
-    except Exception as e:
-        logger.error(f"Error in reference upload: {e}", exc_info=True)
-        return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
 def toggle_voice_audio(selected_file: str, voice_mode: str) -> Tuple[Optional[str], str, Dict, Dict]:
     """
     Универсальная функция для воспроизведения файлов из обоих режимов.
@@ -1026,6 +989,44 @@ def get_play_component(current_config):
                                     reference_audio_player   # autoplay
                                     ]
                                 )
+                                def on_reference_upload(files: List[gr.File]):
+                                """
+                                Обработчик загрузки референсных файлов.
+                                Автоматически обновляет список файлов после загрузки.
+                                """
+    #if not files:
+    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
+    
+                                    try:
+        # Вызываем оригинальную функцию загрузки
+                                        result =  upload_reference_audio_endpoint(files)
+        
+        #if "errors" in result and result["errors"]:
+        #    error_msg = result["errors"][0].get("error", "Upload failed")
+        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
+        
+        # Получаем обновленный список файлов
+                                        all_files = result.get("all_reference_files", [])
+                                        uploaded_files = result.get("uploaded_files", [])
+        
+                                        if uploaded_files:
+            # Выбираем первый загруженный файл по умолчанию
+                                            default_selection = uploaded_files[0] if uploaded_files else "none"
+                                            updated_options = all_files
+
+            #notification = show_notification(
+            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
+            #    ("..." if len(uploaded_files) > 3 else ""),
+            #    "success"
+            #)
+            
+                                            return gr.update(choices=updated_options,value=default_selection)
+                                        else:
+                                            return gr.update(choices=populateReferenceFiles())
+            
+                                    except Exception as e:
+                                        logger.error(f"Error in reference upload: {e}", exc_info=True)
+                                        return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
                             reference_upload_btn.upload(
                                 fn=on_reference_upload,
                                 inputs=[reference_upload_btn],
