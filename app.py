@@ -895,7 +895,62 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
 #    return "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
 
 # --- СОЗДАНИЕ GRADIO ИНТЕРФЕЙСА ---
+def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, overlap_sec=0.1, disable_watermark=True, pitch_shift=0):
+    vc_model = get_or_load_vc_model()
+    model_sr = vc_model.sr
 
+    wav, sr = sf.read(input_audio_path)
+    if wav.ndim > 1:
+        wav = wav.mean(axis=1)
+    if sr != model_sr:
+        wav = librosa.resample(wav, orig_sr=sr, target_sr=model_sr)
+        sr = model_sr
+
+    total_sec = len(wav) / model_sr
+
+    if total_sec <= chunk_sec:
+        wav_out = vc_model.generate(
+            input_audio_path,
+            target_voice_path=target_voice_audio_path,
+            apply_watermark=not disable_watermark,
+            pitch_shift=pitch_shift
+        )
+        out_wav = wav_out.squeeze(0).numpy()
+        return model_sr, out_wav
+
+    # chunking logic for long files
+    chunk_samples = int(chunk_sec * model_sr)
+    overlap_samples = int(overlap_sec * model_sr)
+    step_samples = chunk_samples - overlap_samples
+
+    out_chunks = []
+    for start in range(0, len(wav), step_samples):
+        end = min(start + chunk_samples, len(wav))
+        chunk = wav[start:end]
+        temp_chunk_path = f"temp_vc_chunk_{start}_{end}.wav"
+        sf.write(temp_chunk_path, chunk, model_sr)
+        out_chunk = vc_model.generate(
+            temp_chunk_path,
+            target_voice_path=target_voice_audio_path,
+            apply_watermark=not disable_watermark,
+            pitch_shift=pitch_shift
+        )
+        out_chunk_np = out_chunk.squeeze(0).numpy()
+        out_chunks.append(out_chunk_np)
+        os.remove(temp_chunk_path)
+
+    # Crossfade join as before...
+    result = out_chunks[0]
+    for i in range(1, len(out_chunks)):
+        overlap = min(overlap_samples, len(out_chunks[i]), len(result))
+        if overlap > 0:
+            fade_out = np.linspace(1, 0, overlap)
+            fade_in = np.linspace(0, 1, overlap)
+            result[-overlap:] = result[-overlap:] * fade_out + out_chunks[i][:overlap] * fade_in
+            result = np.concatenate([result, out_chunks[i][overlap:]])
+        else:
+            result = np.concatenate([result, out_chunks[i]])
+    return model_sr, result
 def create_gradio_interface():
     """Создание полного интерфейса Gradio на основе index.html"""
     
