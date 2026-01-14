@@ -252,7 +252,7 @@ def load_model() -> bool:
         chatterbox_model = multilingual_model
         MULTILINGUAL_MODEL_LOADED = True
         MODEL_LOADED = True
-
+        logger.info(f"+++++++++++++++++++++++++++++++++++++++TTS модель загружена из кэша: {model_cache_path}")
         logger.info(f"PatchedChatterboxTTS model loaded successfully on {model_device}.")
         logger.info("Multilingual model is now the default for ALL languages.")
         
@@ -262,6 +262,7 @@ def load_model() -> bool:
             logger.info(f"Attempting to load Voice Conversion model on {model_device}...")
             vc_model = ChatterboxVoiceConversion.from_pretrained(device=model_device)
             VC_MODEL_LOADED = True
+            logger.info(f"+++++++++++++++++++++++++++++++++++++++==VC модель загружена из кэша: {model_cache_path}")
             logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
         except Exception as vc_e:
             logger.warning(f"Failed to load Voice Conversion model: {vc_e}")
