@@ -2,7 +2,7 @@ from pathlib import Path
 
 import librosa
 import torch
-import perth
+#import perth
 from huggingface_hub import hf_hub_download
 from safetensors.torch import load_file
 
@@ -26,7 +26,7 @@ class ChatterboxVC:
         self.sr = S3GEN_SR
         self.s3gen = s3gen
         self.device = device
-        self.watermarker = perth.PerthImplicitWatermarker()
+        #self.watermarker = perth.PerthImplicitWatermarker()
         if ref_dict is None:
             self.ref_dict = None
         else:
@@ -70,13 +70,13 @@ class ChatterboxVC:
             
         for fpath in ["s3gen.safetensors", "conds.pt"]:
             local_path = hf_hub_download(repo_id=REPO_ID, filename=fpath)
-        print(f"--------Model downloaded to: {local_path}")
-        print(f"--------Model downloaded to: {local_path}")
+
         return cls.from_local(Path(local_path).parent, device)
 
-    def set_target_voice(self, wav_fpath):
+    def set_target_voice(self, wav_fpath, pitch_shift):
         ## Load reference wav
         s3gen_ref_wav, _sr = librosa.load(wav_fpath, sr=S3GEN_SR)
+        s3gen_ref_wav = librosa.effects.pitch_shift(y=s3gen_ref_wav, sr=S3GEN_SR, n_steps=pitch_shift)
 
         s3gen_ref_wav = s3gen_ref_wav[:self.DEC_COND_LEN]
         self.ref_dict = self.s3gen.embed_ref(s3gen_ref_wav, S3GEN_SR, device=self.device)
@@ -85,9 +85,11 @@ class ChatterboxVC:
         self,
         audio,
         target_voice_path=None,
+        apply_watermark=True,  # New argument!
+        pitch_shift=0
     ):
         if target_voice_path:
-            self.set_target_voice(target_voice_path)
+            self.set_target_voice(target_voice_path, pitch_shift)
         else:
             assert self.ref_dict is not None, "Please `prepare_conditionals` first or specify `target_voice_path`"
 
@@ -101,5 +103,8 @@ class ChatterboxVC:
                 ref_dict=self.ref_dict,
             )
             wav = wav.squeeze(0).detach().cpu().numpy()
-            watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=self.sr)
+            if apply_watermark:
+                watermarked_wav = self.watermarker.apply_watermark(wav, sample_rate=self.sr)
+            else:
+                watermarked_wav = wav
         return torch.from_numpy(watermarked_wav).unsqueeze(0)
