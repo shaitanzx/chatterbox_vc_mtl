@@ -33,7 +33,7 @@ from chatterbox.models.voice_encoder import VoiceEncoder
 from chatterbox.models.tokenizers import MTLTokenizer
 from chatterbox.mtl_tts import Conditionals, SUPPORTED_LANGUAGES # Need to import these too
 
-from chatterbox.vc import ChatterboxVoiceConversion
+from chatterbox.vc import ChatterboxVC
 
 
 
@@ -275,7 +275,7 @@ def load_model() -> bool:
             vc_model = None
             VC_MODEL_LOADED = False
 
-            
+
         return True
 
     except Exception as e:
