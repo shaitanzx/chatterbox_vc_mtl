@@ -18,7 +18,7 @@ tts_engine:
   default_voice_clone: RU_Female_AliExpress.mp3
   auto_load_multilingual: true
 paths:
-  model_cache: model_cache
+  model_cache: ./model_cache
   output: outputs
 generation_defaults:
   temperature: 0.01
