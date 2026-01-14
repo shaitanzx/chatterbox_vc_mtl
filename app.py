@@ -32,7 +32,7 @@ os.environ["TORCH_HOME"] = str(model_cache_path)
 os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_cache_path)
 os.environ["XDG_CACHE_HOME"] = str(model_cache_path.parent)
 print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',os.path.abspath(model_cache_path))
-os.environ["HF_HOME"] = os.path.abspath(model_cache_path)
+#os.environ["HF_HOME"] = os.path.abspath(model_cache_root)
 from pathlib import Path
 import gradio as gr
 import torch
