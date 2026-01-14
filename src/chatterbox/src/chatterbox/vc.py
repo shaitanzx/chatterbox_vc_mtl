@@ -70,7 +70,7 @@ class ChatterboxVC:
             
         for fpath in ["s3gen.safetensors", "conds.pt"]:
             local_path = hf_hub_download(repo_id=REPO_ID, filename=fpath)
-
+        print(f"Model downloaded to: {local_path}")
         return cls.from_local(Path(local_path).parent, device)
 
     def set_target_voice(self, wav_fpath):
