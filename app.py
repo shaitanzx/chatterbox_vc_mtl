@@ -743,7 +743,44 @@ async def on_restart_click() -> Dict[str, str]:
     # В Gradio просто показываем сообщение
     return show_notification("🔄 Server restart initiated...", "info")
 
+def on_reference_upload(files: List[gr.File]):
+    """
+    Обработчик загрузки референсных файлов.
+    Автоматически обновляет список файлов после загрузки.
+    """
+    #if not files:
+    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
+    
+    try:
+        # Вызываем оригинальную функцию загрузки
+        result =  upload_reference_audio_endpoint(files)
+        
+        #if "errors" in result and result["errors"]:
+        #    error_msg = result["errors"][0].get("error", "Upload failed")
+        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
+        
+        # Получаем обновленный список файлов
+        all_files = result.get("all_reference_files", [])
+        uploaded_files = result.get("uploaded_files", [])
+        
+        if uploaded_files:
+            # Выбираем первый загруженный файл по умолчанию
+            default_selection = uploaded_files[0] if uploaded_files else "none"
+            updated_options = all_files
 
+            #notification = show_notification(
+            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
+            #    ("..." if len(uploaded_files) > 3 else ""),
+            #    "success"
+            #)
+            
+            return gr.update(choices=updated_options,value=default_selection)
+        else:
+            return gr.update(choices=populateReferenceFiles())
+            
+    except Exception as e:
+        logger.error(f"Error in reference upload: {e}", exc_info=True)
+        return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
 def toggle_voice_audio(selected_file: str, voice_mode: str) -> Tuple[Optional[str], str, Dict, Dict]:
     """
     Универсальная функция для воспроизведения файлов из обоих режимов.
@@ -916,128 +953,6 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
         else:
             result = np.concatenate([result, out_chunks[i]])
     return model_sr, result
-def get_play_component(current_config):
-                with gr.Row():                
-                    # Режим голоса (аналог Voice Mode)
-                        with gr.Accordion("🗣 Voice Mode", open=True):
-                            voice_mode_radio = gr.Radio(
-                                choices=["predefined", "clone"],
-                                value="predefined",
-                                label="Select Voice Mode"
-                            )
-                    
-                    # Предопределенные голоса
-                            with gr.Group(visible=True) as predefined_group:
-                                with gr.Row():
-                                    predefined_voice_select = gr.Dropdown(
-                                        choices=populatePredefinedVoices(),
-                                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
-                                        label="Predefined Voices",
-                                        interactive=True
-                                    )
-                                with gr.Row():    
-                                    predefined_play_btn = gr.Button("▶️ Play/Stop")
-                    
-                    # Референсные файлы для клонирования
-                            with gr.Group(visible=False) as clone_group:
-                                with gr.Row():
-                                    reference_file_select = gr.Dropdown(
-                                        choices=populateReferenceFiles(),
-                                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
-                                        label="Reference Audio Files",
-                                        interactive=True
-                                    )
-                                with gr.Row(): 
-                                    reference_play_btn = gr.Button("▶️ Play/Stop")
-                        # Кнопки для работы с референсными файлами ТОЛЬКО ЗДЕСЬ
-                                with gr.Row():
-                                    reference_upload_btn = gr.UploadButton("📁 Upload Reference Audio",
-                                        file_types=[".wav", ".mp3"],
-                                        file_count="single",
-                                        visible=True
-                                    )
-
-                            reference_audio_player = gr.Audio(
-                                    visible=False,
-                                    label="",
-                                    interactive=False,
-                                    show_label=False,
-                                    elem_id="reference-audio-player",
-                                    autoplay=False  # изначально выключено
-                                )  
-                            reference_audio_trigger = gr.Audio(
-                                    visible=False,
-                                    elem_id="reference-audio-trigger"
-                                )
-                            reference_play_btn.click(
-                                fn=lambda file: toggle_voice_audio(file, "clone"),
-                                inputs=[reference_file_select],
-                                outputs=[
-                                    reference_audio_player,  # основной аудиоплеер
-                                    reference_play_btn,      # текст кнопки
-                                    reference_audio_player,  # видимость
-                                    reference_audio_player   # autoplay
-                                    ]
-                                ) 
-                            predefined_play_btn.click(
-                                fn=lambda file: toggle_voice_audio(file, "predefined"),
-                                inputs=[predefined_voice_select],
-                                outputs=[
-                                    reference_audio_player,  # основной аудиоплеер
-                                    predefined_play_btn,     # текст кнопки
-                                    reference_audio_player,  # видимость
-                                    reference_audio_player   # autoplay
-                                    ]
-                                )
-                            def on_reference_upload(files: List[gr.File]):
-                                """
-                                Обработчик загрузки референсных файлов.
-                                Автоматически обновляет список файлов после загрузки.
-                                """
-    #if not files:
-    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
-    
-                                try:
-        # Вызываем оригинальную функцию загрузки
-                                        result =  upload_reference_audio_endpoint(files)
-        
-        #if "errors" in result and result["errors"]:
-        #    error_msg = result["errors"][0].get("error", "Upload failed")
-        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
-        
-        # Получаем обновленный список файлов
-                                        all_files = result.get("all_reference_files", [])
-                                        uploaded_files = result.get("uploaded_files", [])
-        
-                                        if uploaded_files:
-            # Выбираем первый загруженный файл по умолчанию
-                                            default_selection = uploaded_files[0] if uploaded_files else "none"
-                                            updated_options = all_files
-
-            #notification = show_notification(
-            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
-            #    ("..." if len(uploaded_files) > 3 else ""),
-            #    "success"
-            #)
-            
-                                            return gr.update(choices=updated_options,value=default_selection)
-                                        else:
-                                            return gr.update(choices=populateReferenceFiles())
-            
-                                except Exception as e:
-                                        logger.error(f"Error in reference upload: {e}", exc_info=True)
-                                        return populateReferenceFiles(), show_notification(f"❌ Upload failed: {str(e)}", "error")
-                            reference_upload_btn.upload(
-                                fn=on_reference_upload,
-                                inputs=[reference_upload_btn],
-                                outputs=[reference_file_select]
-                                )
-                            voice_mode_radio.change(
-                                fn=toggleVoiceOptionsDisplay,
-                                inputs=[voice_mode_radio],
-                                outputs=[predefined_group, clone_group]
-                                )    
-                return  voice_mode_radio, predefined_voice_select, reference_file_select   
 def create_gradio_interface():
     """Создание полного интерфейса Gradio на основе index.html"""
     
@@ -1161,11 +1076,62 @@ def create_gradio_interface():
                                 label="Chunk Size",
                                 visible=True
                             )
-                voice_mode_radio, predefined_voice_select, reference_file_select = get_play_component(current_config)
+
 
 #####################################                            
-             
-#######################
+                with gr.Row():                
+                    # Режим голоса (аналог Voice Mode)
+                        with gr.Accordion("🗣 Voice Mode", open=True):
+                            voice_mode_radio = gr.Radio(
+                                choices=["predefined", "clone"],
+                                value="predefined",
+                                label="Select Voice Mode"
+                            )
+                    
+                    # Предопределенные голоса
+                            with gr.Group(visible=True) as predefined_group:
+                                with gr.Row():
+                                    predefined_voice_select = gr.Dropdown(
+                                        choices=populatePredefinedVoices(),
+                                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
+                                        label="Predefined Voices",
+                                        interactive=True
+                                    )
+                                with gr.Row():    
+                                    predefined_play_btn = gr.Button("▶️ Play/Stop")
+                    
+                    # Референсные файлы для клонирования
+                            with gr.Group(visible=False) as clone_group:
+                                with gr.Row():
+                                    reference_file_select = gr.Dropdown(
+                                        choices=populateReferenceFiles(),
+                                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
+                                        label="Reference Audio Files",
+                                        interactive=True
+                                    )
+                                with gr.Row(): 
+                                    reference_play_btn = gr.Button("▶️ Play/Stop")
+                        # Кнопки для работы с референсными файлами ТОЛЬКО ЗДЕСЬ
+                                with gr.Row():
+                                    reference_upload_btn = gr.UploadButton("📁 Upload Reference Audio",
+                                        file_types=[".wav", ".mp3"],
+                                        file_count="single",
+                                        visible=True
+                                    )
+
+                            reference_audio_player = gr.Audio(
+                                    visible=False,
+                                    label="",
+                                    interactive=False,
+                                    show_label=False,
+                                    elem_id="reference-audio-player",
+                                    autoplay=False  # изначально выключено
+                                )  
+                            reference_audio_trigger = gr.Audio(
+                                    visible=False,
+                                    elem_id="reference-audio-trigger"
+                                )      
+
 
 
 
@@ -1349,7 +1315,16 @@ def create_gradio_interface():
 
 
         # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
-
+        predefined_play_btn.click(
+            fn=lambda file: toggle_voice_audio(file, "predefined"),
+            inputs=[predefined_voice_select],
+            outputs=[
+                reference_audio_player,  # основной аудиоплеер
+                predefined_play_btn,     # текст кнопки
+                reference_audio_player,  # видимость
+                reference_audio_player   # autoplay
+            ]
+        )
         save_config_btn.click(
             fn=save_settings_endpoint,
             inputs=[config_tts_engine_device, config_tts_engine_reference_audio_path, config_tts_engine_predefined_voices_path, 
@@ -1358,8 +1333,21 @@ def create_gradio_interface():
                 speed_factor_slider, language_select, config_audio_output_format,config_audio_output_sample_rate]
         )
         
-
-
+        reference_play_btn.click(
+            fn=lambda file: toggle_voice_audio(file, "clone"),
+            inputs=[reference_file_select],
+            outputs=[
+                reference_audio_player,  # основной аудиоплеер
+                reference_play_btn,      # текст кнопки
+                reference_audio_player,  # видимость
+                reference_audio_player   # autoplay
+            ]
+        )
+        reference_upload_btn.upload(
+            fn=on_reference_upload,
+            inputs=[reference_upload_btn],
+            outputs=[reference_file_select]
+        )
         # Основная кнопка Generate
         generate_btn.click(lambda: (gr.update(interactive=False)),outputs=[generate_btn]) \
             .then(fn=on_generate_click,inputs=[
@@ -1398,7 +1386,11 @@ def create_gradio_interface():
         )
         
         # Переключение режимов голоса
-
+        voice_mode_radio.change(
+            fn=toggleVoiceOptionsDisplay,
+            inputs=[voice_mode_radio],
+            outputs=[predefined_group, clone_group]
+        )
         
 #        # Переключение видимости настроек чанкинга
 #        split_text_toggle.change(
