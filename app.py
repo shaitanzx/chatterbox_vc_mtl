@@ -961,10 +961,9 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
 
 
 def voice_change(current_config):
-                    with gr.Row(): 
-                        gr.Markdown ('Target Voice')               
+                    with gr.Row():            
                     # Режим голоса (аналог Voice Mode)
-                        with gr.Accordion("🗣 Voice Mode", open=True):
+                        with gr.Accordion("🗣 Target Voice", open=True):
                             voice_mode_radio = gr.Radio(
                                 choices=["predefined", "clone"],
                                 value="predefined",
@@ -1080,7 +1079,6 @@ def create_gradio_interface():
                         vc_input_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input Audio (to convert)")
                     #vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
                     with gr.Column():
-                        gr.Markdown("Target voice")
                         voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc = voice_change(current_config)
                 vc_pitch_shift = gr.Number(value=0, label="Pitch", step=0.5, interactive=True)
                 disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
