@@ -919,20 +919,20 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
         )
         out_wav = wav_out.squeeze(0).numpy()
 ###################
-    import perth
-    import librosa
+        import perth
+        import librosa
 
     #AUDIO_PATH = "YOUR_FILE.wav"
 
     # Load the watermarked audio
-    watermarked_audio, sr = librosa.load(out_wav, sr=None)
+        watermarked_audio, sr = librosa.load(out_wav, sr=None)
 
     # Initialize watermarker (same as used for embedding)
-    watermarker = perth.PerthImplicitWatermarker()
+        watermarker = perth.PerthImplicitWatermarker()
 
     # Extract watermark
-    watermark = watermarker.get_watermark(watermarked_audio, sample_rate=sr)
-    print(f"Extracted watermark: {watermark}")
+        watermark = watermarker.get_watermark(watermarked_audio, sample_rate=sr)
+        print(f"Extracted watermark: {watermark}")
     # Output: 0.0 (no watermark) or 1.0 (watermarked)
 ###################################
 
@@ -971,6 +971,25 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
             result = np.concatenate([result, out_chunks[i][overlap:]])
         else:
             result = np.concatenate([result, out_chunks[i]])
+
+###################
+    import perth
+    import librosa
+
+    #AUDIO_PATH = "YOUR_FILE.wav"
+
+    # Load the watermarked audio
+    watermarked_audio, sr = librosa.load(result, sr=None)
+
+    # Initialize watermarker (same as used for embedding)
+    watermarker = perth.PerthImplicitWatermarker()
+
+    # Extract watermark
+    watermark = watermarker.get_watermark(watermarked_audio, sample_rate=sr)
+    print(f"Extracted watermark: {watermark}")
+    # Output: 0.0 (no watermark) or 1.0 (watermarked)
+###################################
+
     return model_sr, result
 
 
