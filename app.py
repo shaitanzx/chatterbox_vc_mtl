@@ -1073,22 +1073,40 @@ def create_gradio_interface():
 
             # === VC TAB: Voice Conversion Tab ===
             with gr.Tab("🎤 Voice Conversion (VC)"):
-                gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target/reference voice audio.")
+                gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target voice audio.")
                 with gr.Row():
                     vc_input_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input Audio (to convert)")
-                    vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
+                    #vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
+                    voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc = voice_change(current_config)
                 vc_pitch_shift = gr.Number(value=0, label="Pitch", step=0.5, interactive=True)
                 disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
                 vc_convert_btn = gr.Button("Run Voice Conversion")
-                vc_output_files = gr.Files(label="Converted VC Audio File(s)")
-                vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True)
+                vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
+                vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True, buttons="download",visible=False)
 
-                def _vc_wrapper(input_audio_path, target_voice_audio_path, disable_watermark, pitch_shift):
+                def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc):
                     # Defensive: None means Gradio didn't get file yet
-                    if not input_audio_path or not os.path.exists(input_audio_path):
-                        raise gr.Error("Please upload or record an input audio file.")
-                    if not target_voice_audio_path or not os.path.exists(target_voice_audio_path):
-                        raise gr.Error("Please upload or record a target/reference voice audio file.")
+                    #if not input_audio_path or not os.path.exists(input_audio_path):
+                    #    raise gr.Error("Please upload or record an input audio file.")
+                    #if not target_voice_audio_path or not os.path.exists(target_voice_audio_path):
+                    #    raise gr.Error("Please upload or record a target/reference voice audio file.")
+
+                    audio_prompt_path = None
+                    if voice_mode_vc == "predefined":
+                        voices_dir = get_predefined_voices_path(ensure_absolute=True)
+                        potential_path = voices_dir / predefined_voice_id
+                        target_voice_audio_path = potential_path
+            
+                    elif voice_mode == "clone":
+                        ref_dir = get_reference_audio_path(ensure_absolute=True)
+                        potential_path = ref_dir / reference_audio_filename
+                        max_dur = config_manager.get_int("audio_output.max_reference_duration_sec", 600)
+                        is_valid, msg = utils.validate_reference_audio(potential_path, max_dur)
+                        target_voice_audio_path = potential_path
+
+
+
+
 
                     sr, out_wav = voice_conversion(
                         input_audio_path,
@@ -1096,7 +1114,7 @@ def create_gradio_interface():
                         disable_watermark=disable_watermark,
                         pitch_shift=pitch_shift
                     )
-                    os.makedirs("output", exist_ok=True)
+                    os.makedirs("outputs", exist_ok=True)
                     base = os.path.splitext(os.path.basename(input_audio_path))[0]
                     timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S_%f")[:-3]
                     out_path = f"outputs/{base}_vc_{timestamp}.wav"
@@ -1105,7 +1123,7 @@ def create_gradio_interface():
 
                 vc_convert_btn.click(
                     fn=_vc_wrapper,
-                    inputs=[vc_input_audio, vc_target_audio, disable_watermark_checkbox, vc_pitch_shift],
+                    inputs=[vc_input_audio, vc_target_audio, disable_watermark_checkbox, vc_pitch_shift,voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc],
                     outputs=[vc_output_files, vc_output_audio],
                 )
 
