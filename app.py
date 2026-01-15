@@ -1084,7 +1084,7 @@ def create_gradio_interface():
                 vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
                 vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
 
-                def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc):
+                def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_vc,predefined_voice_id,reference_audio_filename):
                     # Defensive: None means Gradio didn't get file yet
                     #if not input_audio_path or not os.path.exists(input_audio_path):
                     #    raise gr.Error("Please upload or record an input audio file.")
