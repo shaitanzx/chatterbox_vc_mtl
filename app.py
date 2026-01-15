@@ -1082,7 +1082,7 @@ def create_gradio_interface():
                 disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
                 vc_convert_btn = gr.Button("Run Voice Conversion")
                 vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
-                vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True, buttons="download",visible=False)
+                vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False)
 
                 def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc):
                     # Defensive: None means Gradio didn't get file yet
