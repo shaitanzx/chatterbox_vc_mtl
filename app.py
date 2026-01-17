@@ -53,13 +53,6 @@ from datetime import datetime
 import soundfile as sf
 import datetime
 
-# --- ОРИГИНАЛЬНЫЕ ИМПОРТЫ ИЗ SERVER.PY ---
-# Импортируем config_manager ПЕРВЫМ ДЕЛОМ
-
-
-# Получаем путь к кэшу из конфигурации
-
-
 # --- ИМПОРТЫ ИЗ ОРИГИНАЛЬНЫХ ФАЙЛОВ ---
 import engine  # TTS Engine interface
 from models import CustomTTSRequest  # Pydantic models
@@ -196,16 +189,7 @@ def on_accent_click(text: str):
         logger.error(f"Error in accentuate_text_endpoint: {e}", exc_info=True)
         gr.Error(f"⚠️ Accentuation failed: {str(e)}")
         return text
-#def on_accent_click(text: str) -> Tuple[str, Dict[str, str]]:
-#    """Обработчик кнопки Stress (аналог из script.js)"""
-#    if not text:
-#        return text, show_notification("No text to accentuate", "warning")
-    
-#    result = await accentuate_text_endpoint(text)
-#    if result.get("status") == "success":
-#        return result["accented_text"], show_notification("✅ Stresses are placed!", "success")
-#    else:
-#        return text, show_notification(f"⚠️ {result.get('detail', 'Error')}", "error")
+
 
 
 
@@ -361,50 +345,7 @@ def upload_reference_audio_endpoint(files: List[gr.File]) -> Dict[str, Any]:
         "all_reference_files": all_files,
         "errors": errors
     }
-"""
-async def upload_predefined_voice_endpoint(files: List[gr.File]) -> Dict[str, Any]:
-    #Original from server.py - upload predefined voice
-    predefined_voices_path = get_predefined_voices_path(ensure_absolute=True)
-    uploaded_filenames = []
-    errors = []
-    
-    for file_info in files:
-        if not file_info:
-            continue
-            
-        filename = os.path.basename(file_info)
-        safe_filename = utils.sanitize_filename(filename)
-        destination_path = predefined_voices_path / safe_filename
-        
-        try:
-            if destination_path.exists():
-                logger.info(f"Voice file '{safe_filename}' already exists.")
-                uploaded_filenames.append(safe_filename)
-                continue
-            
-            shutil.copy2(file_info, destination_path)
-            
-            # Basic validation
-            is_valid, validation_msg = utils.validate_reference_audio(
-                destination_path, max_duration_sec=None
-            )
-            if not is_valid:
-                destination_path.unlink(missing_ok=True)
-                errors.append({"filename": safe_filename, "error": validation_msg})
-            else:
-                uploaded_filenames.append(safe_filename)
-                
-        except Exception as e:
-            errors.append({"filename": filename, "error": str(e)})
-    
-    all_voices = utils.get_predefined_voices()
-    return {
-        "message": f"Processed {len(files)} voice file(s)",
-        "uploaded_files": uploaded_filenames,
-        "all_predefined_voices": all_voices,
-        "errors": errors
-    }
-"""
+
 # --- ОСНОВНАЯ TTS ФУНКЦИЯ (аналог custom_tts_endpoint из server.py) ---
 def custom_tts_endpoint(
     text: str,
@@ -727,12 +668,7 @@ def on_generate_click(
     )
     gr.Info(message)
     return gr.update (value=audio_file, visible=True)
-    #if audio_file:
-    #    notification = show_notification("Audio generated successfully!", "success")
-    #    return audio_file, f"✅ {message}", notification
-    #else:
-    #    notification = show_notification(f"Generation failed: {message}", "error")
-    #    return None, f"❌ {message}", notification
+
 
 
 def on_text_input(text: str) -> str:
@@ -749,16 +685,13 @@ def on_reference_upload(files: List[gr.File]):
     Обработчик загрузки референсных файлов.
     Автоматически обновляет список файлов после загрузки.
     """
-    #if not files:
-    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
+
     
     try:
         # Вызываем оригинальную функцию загрузки
         result =  upload_reference_audio_endpoint(files)
         
-        #if "errors" in result and result["errors"]:
-        #    error_msg = result["errors"][0].get("error", "Upload failed")
-        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
+
         
         # Получаем обновленный список файлов
         all_files = result.get("all_reference_files", [])
@@ -832,71 +765,8 @@ def reset_playback_on_mode_change(voice_mode: str) -> Tuple[str, str, Dict]:
     global reference_playing_state
     reference_playing_state = {"is_playing": False, "current_key": None}
     return "▶️ Play/Stop", "▶️ Play/Stop", gr.update(visible=False)
-"""
-def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, overlap_sec=0.1, disable_watermark=True, pitch_shift=0):
-    vc_model = get_or_load_vc_model()
-    model_sr = vc_model.sr
 
-    wav, sr = sf.read(input_audio_path)
-    if wav.ndim > 1:
-        wav = wav.mean(axis=1)
-    if sr != model_sr:
-        wav = librosa.resample(wav, orig_sr=sr, target_sr=model_sr)
-        sr = model_sr
 
-    total_sec = len(wav) / model_sr
-
-    if total_sec <= chunk_sec:
-        wav_out = vc_model.generate(
-            input_audio_path,
-            target_voice_path=target_voice_audio_path,
-            apply_watermark=not disable_watermark,
-            pitch_shift=pitch_shift
-        )
-        out_wav = wav_out.squeeze(0).numpy()
-        return model_sr, out_wav
-
-    # chunking logic for long files
-    chunk_samples = int(chunk_sec * model_sr)
-    overlap_samples = int(overlap_sec * model_sr)
-    step_samples = chunk_samples - overlap_samples
-
-    out_chunks = []
-    for start in range(0, len(wav), step_samples):
-        end = min(start + chunk_samples, len(wav))
-        chunk = wav[start:end]
-        temp_chunk_path = f"temp_vc_chunk_{start}_{end}.wav"
-        sf.write(temp_chunk_path, chunk, model_sr)
-        out_chunk = vc_model.generate(
-            temp_chunk_path,
-            target_voice_path=target_voice_audio_path,
-            apply_watermark=not disable_watermark,
-            pitch_shift=pitch_shift
-        )
-        out_chunk_np = out_chunk.squeeze(0).numpy()
-        out_chunks.append(out_chunk_np)
-        os.remove(temp_chunk_path)
-
-    # Crossfade join as before...
-    result = out_chunks[0]
-    for i in range(1, len(out_chunks)):
-        overlap = min(overlap_samples, len(out_chunks[i]), len(result))
-        if overlap > 0:
-            fade_out = np.linspace(1, 0, overlap)
-            fade_in = np.linspace(0, 1, overlap)
-            result[-overlap:] = result[-overlap:] * fade_out + out_chunks[i][:overlap] * fade_in
-            result = np.concatenate([result, out_chunks[i][overlap:]])
-        else:
-            result = np.concatenate([result, out_chunks[i]])
-    return model_sr, result
-"""
-#def on_reference_selection_change(selected_file: str) -> Tuple[str, Dict, Dict]:
-#    """
-#    При изменении выбора файла в dropdown останавливает воспроизведение.
-#    """
-#    global reference_playing_state
-#    reference_playing_state = {"is_playing": False, "current_file": None}
-#    return "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
 
 # --- СОЗДАНИЕ GRADIO ИНТЕРФЕЙСА ---
 def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, overlap_sec=0.1, disable_watermark=True, pitch_shift=0):
@@ -1088,15 +958,12 @@ def create_gradio_interface():
                 vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
 
                 def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_vc,predefined_voice_id,reference_audio_filename):
-                    # Defensive: None means Gradio didn't get file yet
-                    #if not input_audio_path or not os.path.exists(input_audio_path):
-                    #    raise gr.Error("Please upload or record an input audio file.")
-                    #if not target_voice_audio_path or not os.path.exists(target_voice_audio_path):
-                    #    raise gr.Error("Please upload or record a target/reference voice audio file.")
+
 
                     audio_prompt_path = None
                     if voice_mode_vc == "predefined":
                         voices_dir = get_predefined_voices_path(ensure_absolute=True)
+                        print('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq',voices_dir)
                         potential_path = voices_dir / predefined_voice_id
                         target_voice_audio_path = potential_path
             
@@ -1305,8 +1172,7 @@ def create_gradio_interface():
                     """)
 
         with gr.Tab("⚙️ Server Configuration"):
-        # Секция конфигурации сервера (аналог Server Configuration из index.html)
-            #with gr.Accordion("⚙️ Server Configuration", open=False):
+
                 gr.Markdown("""
                 These settings are loaded from `config.yaml` via an API call.
                 **Restart the server** to apply changes to Host, Port, Model, or Path settings if modified.
@@ -1352,32 +1218,11 @@ def create_gradio_interface():
                             value=current_config.get("tts_engine", {}).get("default_voice_clone", ""),
                             interactive=True
                             )
-
-
-                        
-
-
-                        
+               
             
             # Кнопки управления конфигурацией
                 with gr.Row():
                     save_config_btn = gr.Button("💾 Save Server Configuration", variant="primary")
-                #restart_server_btn = gr.Button("🔄 Restart Server", variant="secondary", visible=False)
-            
-            # Статус конфигурации
-            #config_status = gr.Textbox(
-            #    label="Configuration Status",
-            #    value="",
-            #    interactive=False,
-            #    visible=False
-            #)        
-
-
-
-
-
-
-
 
         # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
 
@@ -1426,16 +1271,7 @@ def create_gradio_interface():
             inputs=[text_area],
             outputs=[char_count]
         )
-        
-        # Переключение режимов голоса
 
-        
-#        # Переключение видимости настроек чанкинга
-#        split_text_toggle.change(
-#            fn=toggleChunkControlsVisibility,
-#            inputs=[split_text_toggle],
-#            outputs=[chunk_size_slider, chunk_size_value_display]
-#        )
         
         # Автоматическое скрытие уведомлений через 3 секунды
         def hide_notification():
@@ -1474,7 +1310,7 @@ def main():
     server_host = get_host()
     server_port = get_port()
     
-    logger.info(f"Starting TTS Server on http://{server_host}:{server_port}")
+
     logger.info(f"Web UI available at http://{server_host}:{server_port}")
     
     # Запуск Gradio
