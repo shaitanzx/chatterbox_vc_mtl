@@ -41,6 +41,8 @@ except ImportError:
         "and pitch-preserving speed adjustment will be limited. Speed adjustment will fall back to basic method if enabled."
     )
 import parselmouth
+print(f"00000000000000000000000000000000000000000000000000000000Parselmouth version: {parselmouth.__version__}")
+print(dir(parselmouth.Pitch))  
 # Optional import for Parselmouth (for unvoiced segment detection)
 #try:
 #    import parselmouth
