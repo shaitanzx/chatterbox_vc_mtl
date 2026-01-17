@@ -1130,7 +1130,8 @@ def create_gradio_interface():
                                         )
                                     silence_trimming =gr.Checkbox(
                                         label="enable_silence_trimming",
-                                        value=current_config.get("audio_processing", {}).get("enable_silence_trimming", "False")
+                                        value=current_config.get("audio_processing", {}).get("enable_silence_trimming", "False"),
+                                        interactive=True
                             )
 
                 with gr.Accordion("📚 Example Presets", open=False):

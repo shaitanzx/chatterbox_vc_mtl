@@ -55,4 +55,4 @@ ui:
 debug:
   save_intermediate_audio: false
 audio_processing:
-  enable_silence_trimming: true
+  enable_silence_trimming: False
