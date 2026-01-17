@@ -722,7 +722,7 @@ def voice_change(current_config):
                         predefined_play_btn,     # текст кнопки
                         reference_audio_player,  # видимость
                         reference_audio_player   # autoplay
-                        
+                        ]
                 )
             reference_play_btn.click(
                 fn=lambda file: toggle_voice_audio(file, "custom"),
