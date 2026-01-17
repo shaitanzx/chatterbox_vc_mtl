@@ -57,3 +57,4 @@ debug:
 audio_processing:
   enable_silence_trimming: False
   enable_internal_silence_fix: False
+  enable_unvoiced_removal: False
