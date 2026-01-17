@@ -40,20 +40,20 @@ except ImportError:
         "Librosa library not found. Advanced audio resampling features (e.g., for Opus encoding) "
         "and pitch-preserving speed adjustment will be limited. Speed adjustment will fall back to basic method if enabled."
     )
-
+import parselmouth
 # Optional import for Parselmouth (for unvoiced segment detection)
-try:
-    import parselmouth
+#try:
+#    import parselmouth
 
-    PARSELMOUTH_AVAILABLE = True
-    logger.info(
-        "Parselmouth library found and will be used for unvoiced segment removal if enabled."
-    )
-except ImportError:
-    PARSELMOUTH_AVAILABLE = False
-    logger.warning(
-        "Parselmouth library not found. Unvoiced segment removal feature will be disabled."
-    )
+#    PARSELMOUTH_AVAILABLE = True
+#    logger.info(
+#        "Parselmouth library found and will be used for unvoiced segment removal if enabled."
+#    )
+#except ImportError:
+#    PARSELMOUTH_AVAILABLE = False
+#    logger.warning(
+#        "Parselmouth library not found. Unvoiced segment removal feature will be disabled."
+#    )
 
 
 # --- Filename Sanitization ---
