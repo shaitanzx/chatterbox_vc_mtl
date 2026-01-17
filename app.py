@@ -1276,7 +1276,8 @@ def create_gradio_interface():
                             label="Generated Audio",
                             type="filepath",
                             interactive=False,
-                            visible=False
+                            visible=False,
+                            show_download_button=True
                         )
                 
               
