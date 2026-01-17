@@ -364,6 +364,7 @@ def custom_tts_endpoint(
     output_sample_rate: Optional[int] = None,
     audio_name: Optional[str] = None,
     silence_trimming: bool = False,
+    internal_silence_fix: bool = False
 ) -> Tuple[Optional[str], str]:  # (audio_file_path, status_message)
     """Original TTS generation function from server.py"""
     
@@ -449,12 +450,16 @@ def custom_tts_endpoint(
         )
 #############################################################        
         # Применение аудио-обработки
-        print ('zzzzzzzzzzzzzzzzzzzz',silence_trimming)
+        
         if silence_trimming:
             final_audio_np = utils.trim_lead_trail_silence(
                 final_audio_np, engine_output_sample_rate
             )
-        
+        print ('zzzzzzzzzzzzzzzzzzzz',internal_silence_fix)
+        if internal_silence_fix:
+            final_audio_np = utils.fix_internal_silence(
+                final_audio_np, engine_output_sample_rate
+            )
         # Применение скорости
         if speed_factor != 1.0:
             try:
@@ -639,7 +644,8 @@ def on_generate_click(
     output_format: str,
     config_audio_output_sample_rate: int,
     audio_name: str,
-    silence_trimming: bool
+    silence_trimming: bool,
+    internal_silence_fix: bool
 ) -> Tuple[Optional[str], str, Dict[str, str]]:
     """Основной обработчик кнопки Generate (аналог из script.js)"""
     
@@ -674,7 +680,8 @@ def on_generate_click(
         output_format=output_format,
         output_sample_rate=config_audio_output_sample_rate,
         audio_name=audio_name,
-        silence_trimming=silence_trimming
+        silence_trimming=silence_trimming,
+        internal_silence_fix=internal_silence_fix
     )
     gr.Info(message)
     return gr.update (value=audio_file, visible=True)
@@ -1129,12 +1136,16 @@ def create_gradio_interface():
                                         label="Audio Output Format",
                                         interactive=True
                                         )
-                                    silence_trimming =gr.Checkbox(
+                                    silence_trimming = gr.Checkbox(
                                         label="enable_silence_trimming",
                                         value=current_config.get("audio_processing", {}).get("enable_silence_trimming", "False"),
                                         interactive=True
-                            )
-
+                                        )
+                                    internal_silence_fix = gr.Checkbox(
+                                        label="enable_internal_silence_fix",
+                                        value=current_config.get("audio_processing", {}).get("enable_internal_silence_fix", "False"),
+                                        interactive=True
+                                        )
                 with gr.Accordion("📚 Example Presets", open=False):
                     with gr.Row():
                         if appPresets:
@@ -1267,7 +1278,8 @@ def create_gradio_interface():
                 config_audio_output_format,
                 config_audio_output_sample_rate,
                 audio_name_input,
-                silence_trimming
+                silence_trimming,
+                internal_silence_fix
             ],outputs=[audio_output]) \
             .then (lambda: (gr.update(interactive=True)),outputs=[generate_btn])
         
