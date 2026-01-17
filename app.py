@@ -53,6 +53,14 @@ from datetime import datetime
 import soundfile as sf
 import datetime
 
+# --- ОРИГИНАЛЬНЫЕ ИМПОРТЫ ИЗ SERVER.PY ---
+# Импортируем config_manager ПЕРВЫМ ДЕЛОМ
+
+
+# Получаем путь к кэшу из конфигурации
+
+
+# --- ИМПОРТЫ ИЗ ОРИГИНАЛЬНЫХ ФАЙЛОВ ---
 import engine  # TTS Engine interface
 from models import CustomTTSRequest  # Pydantic models
 import utils  # Utility functions
@@ -103,10 +111,15 @@ LANGUAGE_LABELS = {
     'it': "Italian", 'fi': "Finnish", 'no': "Norwegian", 'ms': "Malay", 'he': "Hebrew",
     'el': "Greek", 'da': "Danish", 'sw': "Swahili"
 }
-
+# Создаём обратное отображение: "Russian" → "ru"
 DISPLAY_TO_CODE = {name: code for code, name in LANGUAGE_LABELS.items()}
 
 def extract_language_code(display_text: str) -> str:
+    """
+    Извлекает код языка из строки вида 'Russian (ru)' или просто 'Russian'.
+    Возвращает код (например, 'ru') или исходную строку, если не найдено.
+    """
+    # Убираем скобки и всё, что в них — оставляем только название
     if " (" in display_text and display_text.endswith(")"):
         lang_name = display_text.split(" (")[0]
     else:
@@ -114,6 +127,7 @@ def extract_language_code(display_text: str) -> str:
 
     return DISPLAY_TO_CODE.get(lang_name, display_text)
 
+# --- Accentuation Support (из server.py) ---
 try:
     accent_model = RUAccent()
     accent_model.load()
@@ -122,6 +136,7 @@ except Exception as e:
     accent_model = None
 
 def convert_plus_to_accent(text: str) -> str:
+    """Convert ruaccent '+vowel' markers to vowel with combining acute"""
     replacements = {
         '+а': 'а́', '+А': 'А́', '+е': 'е́', '+Е': 'Е́',
         '+ё': 'ё́', '+Ё': 'Ё́', '+и': 'и́', '+И': 'И́',
@@ -134,6 +149,7 @@ def convert_plus_to_accent(text: str) -> str:
     return text
 
 def load_custom_accents() -> Dict[str, str]:
+    """Load custom accent fixes from YAML and dict files (из server.py)"""
     yaml_fixes = {}
     path = Path("accent_fixes.yaml")
     if path.is_file():
@@ -153,6 +169,7 @@ def load_custom_accents() -> Dict[str, str]:
 CUSTOM_ACCENTS = load_custom_accents()
 
 def apply_custom_fixes(text: str) -> str:
+    """Apply custom accent fixes (из server.py)"""
     text = unicodedata.normalize("NFC", text)
     items = [(k, v) for k, v in CUSTOM_ACCENTS.items() 
              if isinstance(k, str) and isinstance(v, str)]
@@ -161,7 +178,10 @@ def apply_custom_fixes(text: str) -> str:
         text = re.sub(re.escape(wrong), correct, text, flags=re.IGNORECASE)
     return text
 
+# --- ОРИГИНАЛЬНЫЕ ФУНКЦИИ ИЗ SERVER.PY ---
+
 def on_accent_click(text: str):
+    """Original from server.py - accentuate Russian text"""
     if accent_model is None:
         gr.Error("⚠️ RUAccent model not loaded")
         return text
@@ -176,8 +196,21 @@ def on_accent_click(text: str):
         logger.error(f"Error in accentuate_text_endpoint: {e}", exc_info=True)
         gr.Error(f"⚠️ Accentuation failed: {str(e)}")
         return text
+#def on_accent_click(text: str) -> Tuple[str, Dict[str, str]]:
+#    """Обработчик кнопки Stress (аналог из script.js)"""
+#    if not text:
+#        return text, show_notification("No text to accentuate", "warning")
+    
+#    result = await accentuate_text_endpoint(text)
+#    if result.get("status") == "success":
+#        return result["accented_text"], show_notification("✅ Stresses are placed!", "success")
+#    else:
+#        return text, show_notification(f"⚠️ {result.get('detail', 'Error')}", "error")
+
+
 
 def get_ui_initial_data() -> Dict[str, Any]:
+    """Original from server.py - get initial UI data"""
     logger.info("+++++++++Request for initial UI data")
     try:
         full_config = get_full_config_for_template()
@@ -209,7 +242,79 @@ def get_ui_initial_data() -> Dict[str, Any]:
         logger.error(f"Error preparing initial UI data: {e}", exc_info=True)
         return {"error": "Failed to load initial data"}
 
+
+def save_settings_endpoint(config_tts_engine_device, reference_audio_path, predefined_voices_path, default_voice_id, default_voice_clone,
+                config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
+                speed_factor_slider, language, config_audio_output_format,config_audio_output_sample_rate):
+    """Original from server.py - save settings"""
+    logger.info("Saving settings")
+    try:
+        settings_data = {
+            "tts_engine": {
+                "device": config_tts_engine_device,
+                "reference_audio_path": reference_audio_path,
+                "predefined_voices_path": predefined_voices_path,
+                "default_voice_id": default_voice_id,
+                "default_voice_clone": default_voice_clone
+            },
+            "paths": {
+                "model_cache": config_paths_model_cache,
+                "output": config_paths_output
+            },
+            "generation_defaults": {
+                "temperature": temperature_slider,
+                "exaggeration": exaggeration_slider,
+                "cfg_weight": cfg_weight_slider,
+                "seed": seed_input,
+                "speed_factor": speed_factor_slider,
+                "language": extract_language_code(language)
+            },
+            "audio_output": {
+                "format": config_audio_output_format,
+                "sample_rate": config_audio_output_sample_rate
+            }
+        }
+
+        if config_manager.update_and_save(settings_data):
+            restart_needed = any(
+                key in settings_data
+                for key in ["server", "tts_engine", "paths", "model"]
+            )
+            gr.Info("Settings saved successfully.")
+            if restart_needed:
+                gr.Info("A server restart may be required.")
+            return
+        else:
+            return 
+    except Exception as e:
+        logger.error(f"Error saving settings: {e}", exc_info=True)
+        return 
+
+async def reset_settings_endpoint() -> Dict[str, Any]:
+    """Original from server.py - reset settings"""
+    logger.warning("Resetting all configurations to default values")
+    try:
+        if config_manager.reset_and_save():
+            return {
+                "message": "Configuration reset to defaults. Please reload.",
+                "restart_needed": True
+            }
+        else:
+            return {"error": "Failed to reset configuration"}
+    except Exception as e:
+        logger.error(f"Error resetting settings: {e}", exc_info=True)
+        return {"error": f"Internal error: {str(e)}"}
+
+async def get_reference_files_api() -> List[str]:
+    """Original from server.py - get reference files"""
+    return utils.get_valid_reference_files()
+
+async def get_predefined_voices_api() -> List[Dict[str, str]]:
+    """Original from server.py - get predefined voices"""
+    return utils.get_predefined_voices()
+
 def upload_reference_audio_endpoint(files: List[gr.File]) -> Dict[str, Any]:
+    #Original from server.py - upload reference audio
     ref_path = get_reference_audio_path(ensure_absolute=True)
     uploaded_filenames = []
     errors = []
@@ -218,6 +323,7 @@ def upload_reference_audio_endpoint(files: List[gr.File]) -> Dict[str, Any]:
         if not file_info:
             continue
             
+        # Extract filename from Gradio file object
         filename = os.path.basename(file_info)
         safe_filename = utils.sanitize_filename(filename)
         destination_path = ref_path / safe_filename
@@ -255,6 +361,50 @@ def upload_reference_audio_endpoint(files: List[gr.File]) -> Dict[str, Any]:
         "all_reference_files": all_files,
         "errors": errors
     }
+"""
+async def upload_predefined_voice_endpoint(files: List[gr.File]) -> Dict[str, Any]:
+    #Original from server.py - upload predefined voice
+    predefined_voices_path = get_predefined_voices_path(ensure_absolute=True)
+    uploaded_filenames = []
+    errors = []
+    
+    for file_info in files:
+        if not file_info:
+            continue
+            
+        filename = os.path.basename(file_info)
+        safe_filename = utils.sanitize_filename(filename)
+        destination_path = predefined_voices_path / safe_filename
+        
+        try:
+            if destination_path.exists():
+                logger.info(f"Voice file '{safe_filename}' already exists.")
+                uploaded_filenames.append(safe_filename)
+                continue
+            
+            shutil.copy2(file_info, destination_path)
+            
+            # Basic validation
+            is_valid, validation_msg = utils.validate_reference_audio(
+                destination_path, max_duration_sec=None
+            )
+            if not is_valid:
+                destination_path.unlink(missing_ok=True)
+                errors.append({"filename": safe_filename, "error": validation_msg})
+            else:
+                uploaded_filenames.append(safe_filename)
+                
+        except Exception as e:
+            errors.append({"filename": filename, "error": str(e)})
+    
+    all_voices = utils.get_predefined_voices()
+    return {
+        "message": f"Processed {len(files)} voice file(s)",
+        "uploaded_files": uploaded_filenames,
+        "all_predefined_voices": all_voices,
+        "errors": errors
+    }
+"""
 # --- ОСНОВНАЯ TTS ФУНКЦИЯ (аналог custom_tts_endpoint из server.py) ---
 def custom_tts_endpoint(
     text: str,
@@ -283,9 +433,11 @@ def custom_tts_endpoint(
     start_time = time.time()
     
     try:
+        # Проверка модели (аналог строки 597 server.py)
         if not engine.MODEL_LOADED:
             return None, "TTS engine model is not currently loaded or available."
-
+        
+        # Определение пути к аудиопромпту (аналог строк 609-648 server.py)
         audio_prompt_path = None
         if voice_mode == "predefined":
             if not predefined_voice_id:
@@ -411,6 +563,8 @@ def custom_tts_endpoint(
     finally:
         isGenerating = False
 
+# --- ФУНКЦИИ ИЗ SCRIPT.JS (адаптированные для Gradio) ---
+
 def show_notification(message: str, type: str = "info") -> Dict[str, str]:
     """Аналог showNotification из script.js"""
     icon = {
@@ -426,6 +580,38 @@ def show_notification(message: str, type: str = "info") -> Dict[str, str]:
         "timestamp": time.strftime("%H:%M:%S")
     }
 
+def getTTSFormData(
+    text: str,
+    voice_mode: str,
+    predefined_voice: str,
+    reference_file: str,
+    temperature: float,
+    exaggeration: float,
+    cfg_weight: float,
+    speed_factor: float,
+    seed: int,
+    language: str,
+    split_text: bool,
+    chunk_size: int,
+    output_format: str
+) -> Dict[str, Any]:
+    """Аналог getTTSFormData из script.js"""
+    return {
+        "text": text,
+        "temperature": temperature,
+        "exaggeration": exaggeration,
+        "cfg_weight": cfg_weight,
+        "speed_factor": speed_factor,
+        "seed": seed,
+        "language": language,
+        "voice_mode": voice_mode,
+        "split_text": split_text,
+        "chunk_size": chunk_size,
+        "output_format": output_format,
+        "predefined_voice_id": predefined_voice if voice_mode == "predefined" and predefined_voice != "none" else None,
+        "reference_audio_filename": reference_file if voice_mode == "custom" and reference_file != "none" else None
+    }
+
 def toggleVoiceOptionsDisplay(voice_mode: str) -> Tuple[Dict, Dict]:
     """Аналог toggleVoiceOptionsDisplay из script.js"""
     return (
@@ -433,9 +619,21 @@ def toggleVoiceOptionsDisplay(voice_mode: str) -> Tuple[Dict, Dict]:
         gr.update(visible=(voice_mode == "custom"))
     )
 
+def toggleChunkControlsVisibility(split_enabled: bool) -> Tuple[Dict, Dict]:
+    """Аналог toggleChunkControlsVisibility из script.js"""
+    return (
+        gr.update(visible=split_enabled),
+        gr.update(visible=split_enabled)
+    )
 
+def updateSpeedFactorWarning(speed_factor: float) -> str:
+    """Аналог updateSpeedFactorWarning из script.js"""
+    if speed_factor != 1.0:
+        return f"⚠️ Speed factor is {speed_factor}. Normal is 1.0"
+    return ""
 
 def populatePredefinedVoices() -> List[str]:
+    """Аналог populatePredefinedVoices из script.js"""
     voices = utils.get_predefined_voices()
     return [voice.get("filename", "") for voice in voices]
 
@@ -444,7 +642,16 @@ def populateReferenceFiles() -> List[str]:
     files = utils.get_valid_reference_files()
     return files
 
-
+def populatePresets() -> List[Dict[str, Any]]:
+    """Аналог populatePresets из script.js"""
+    ui_static_path = Path(__file__).parent / "ui"
+    presets_file = ui_static_path / "presets.yaml"
+    if presets_file.exists():
+        with open(presets_file, "r", encoding="utf-8") as f:
+            yaml_content = yaml.safe_load(f)
+            if isinstance(yaml_content, list):
+                return yaml_content
+    return []
 
 def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
     # Поиск пресета
@@ -467,6 +674,8 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
     # Если пресет не найден — значения по умолчанию
     return (0.7, 1.0, 7.0, 1.0, -1)
 
+# --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
+
 def on_generate_click(
     text: str,
     voice_mode: str,
@@ -483,6 +692,7 @@ def on_generate_click(
     output_format: str,
     audio_name: str
 ) -> Tuple[Optional[str], str, Dict[str, str]]:
+    """Основной обработчик кнопки Generate (аналог из script.js)"""
     
     # Валидация (аналог строк 545-560 script.js)
     if not text or text.strip() == "":
@@ -517,25 +727,38 @@ def on_generate_click(
     )
     gr.Info(message)
     return gr.update (value=audio_file, visible=True)
-
+    #if audio_file:
+    #    notification = show_notification("Audio generated successfully!", "success")
+    #    return audio_file, f"✅ {message}", notification
+    #else:
+    #    notification = show_notification(f"Generation failed: {message}", "error")
+    #    return None, f"❌ {message}", notification
 
 
 def on_text_input(text: str) -> str:
     """Обработчик ввода текста (аналог из script.js)"""
     return str(len(text))
 
+async def on_restart_click() -> Dict[str, str]:
+    """Обработчик кнопки Restart Server (аналог из script.js)"""
+    # В Gradio просто показываем сообщение
+    return show_notification("🔄 Server restart initiated...", "info")
 
 def on_reference_upload(files: List[gr.File]):
     """
     Обработчик загрузки референсных файлов.
     Автоматически обновляет список файлов после загрузки.
     """
-   
+    #if not files:
+    #    return populateReferenceFiles(), show_notification("⚠️ No files selected", "warning")
+    
     try:
         # Вызываем оригинальную функцию загрузки
         result =  upload_reference_audio_endpoint(files)
         
-
+        #if "errors" in result and result["errors"]:
+        #    error_msg = result["errors"][0].get("error", "Upload failed")
+        #    return populateReferenceFiles(), show_notification(f"❌ {error_msg}", "error")
         
         # Получаем обновленный список файлов
         all_files = result.get("all_reference_files", [])
@@ -546,6 +769,11 @@ def on_reference_upload(files: List[gr.File]):
             default_selection = uploaded_files[0] if uploaded_files else "none"
             updated_options = all_files
 
+            #notification = show_notification(
+            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
+            #    ("..." if len(uploaded_files) > 3 else ""),
+            #    "success"
+            #)
             
             return gr.update(choices=updated_options,value=default_selection)
         else:
@@ -597,6 +825,78 @@ def toggle_voice_audio(selected_file: str, voice_mode: str) -> Tuple[Optional[st
         gr.update(visible=True),  # показываем плеер
         gr.update(value=str(file_path), autoplay=True)  # устанавливаем файл и автозапуск
     )
+def reset_playback_on_mode_change(voice_mode: str) -> Tuple[str, str, Dict]:
+    """
+    Сбрасывает воспроизведение при смене режима голоса.
+    """
+    global reference_playing_state
+    reference_playing_state = {"is_playing": False, "current_key": None}
+    return "▶️ Play/Stop", "▶️ Play/Stop", gr.update(visible=False)
+"""
+def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, overlap_sec=0.1, disable_watermark=True, pitch_shift=0):
+    vc_model = get_or_load_vc_model()
+    model_sr = vc_model.sr
+
+    wav, sr = sf.read(input_audio_path)
+    if wav.ndim > 1:
+        wav = wav.mean(axis=1)
+    if sr != model_sr:
+        wav = librosa.resample(wav, orig_sr=sr, target_sr=model_sr)
+        sr = model_sr
+
+    total_sec = len(wav) / model_sr
+
+    if total_sec <= chunk_sec:
+        wav_out = vc_model.generate(
+            input_audio_path,
+            target_voice_path=target_voice_audio_path,
+            apply_watermark=not disable_watermark,
+            pitch_shift=pitch_shift
+        )
+        out_wav = wav_out.squeeze(0).numpy()
+        return model_sr, out_wav
+
+    # chunking logic for long files
+    chunk_samples = int(chunk_sec * model_sr)
+    overlap_samples = int(overlap_sec * model_sr)
+    step_samples = chunk_samples - overlap_samples
+
+    out_chunks = []
+    for start in range(0, len(wav), step_samples):
+        end = min(start + chunk_samples, len(wav))
+        chunk = wav[start:end]
+        temp_chunk_path = f"temp_vc_chunk_{start}_{end}.wav"
+        sf.write(temp_chunk_path, chunk, model_sr)
+        out_chunk = vc_model.generate(
+            temp_chunk_path,
+            target_voice_path=target_voice_audio_path,
+            apply_watermark=not disable_watermark,
+            pitch_shift=pitch_shift
+        )
+        out_chunk_np = out_chunk.squeeze(0).numpy()
+        out_chunks.append(out_chunk_np)
+        os.remove(temp_chunk_path)
+
+    # Crossfade join as before...
+    result = out_chunks[0]
+    for i in range(1, len(out_chunks)):
+        overlap = min(overlap_samples, len(out_chunks[i]), len(result))
+        if overlap > 0:
+            fade_out = np.linspace(1, 0, overlap)
+            fade_in = np.linspace(0, 1, overlap)
+            result[-overlap:] = result[-overlap:] * fade_out + out_chunks[i][:overlap] * fade_in
+            result = np.concatenate([result, out_chunks[i][overlap:]])
+        else:
+            result = np.concatenate([result, out_chunks[i]])
+    return model_sr, result
+"""
+#def on_reference_selection_change(selected_file: str) -> Tuple[str, Dict, Dict]:
+#    """
+#    При изменении выбора файла в dropdown останавливает воспроизведение.
+#    """
+#    global reference_playing_state
+#    reference_playing_state = {"is_playing": False, "current_file": None}
+#    return "▶️ Play/Stop", gr.update(visible=False, autoplay=False), gr.update(visible=False)
 
 # --- СОЗДАНИЕ GRADIO ИНТЕРФЕЙСА ---
 def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, overlap_sec=0.1, disable_watermark=True, pitch_shift=0):
@@ -662,89 +962,89 @@ def voice_conversion(input_audio_path, target_voice_audio_path, chunk_sec=60, ov
 
 
 def voice_change(current_config):
-    with gr.Row():            
-    # Режим голоса (аналог Voice Mode)
-        with gr.Accordion("🗣 Target Voice", open=True):
-            voice_mode_radio = gr.Radio(
-                choices=["predefined", "custom"],
-                value="predefined",
-                label="Select Voice Mode"
-                )
+                    with gr.Row():            
+                    # Режим голоса (аналог Voice Mode)
+                        with gr.Accordion("🗣 Target Voice", open=True):
+                            voice_mode_radio = gr.Radio(
+                                choices=["predefined", "custom"],
+                                value="predefined",
+                                label="Select Voice Mode"
+                            )
                     
-    # Предопределенные голоса
-            with gr.Group(visible=True) as predefined_group:
-                with gr.Row():
-                    predefined_voice_select = gr.Dropdown(
-                        choices=populatePredefinedVoices(),
-                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
-                        label="Predefined Voices",
-                        interactive=True
-                        )
-                with gr.Row():    
-                    predefined_play_btn = gr.Button("▶️ Play/Stop")
+                    # Предопределенные голоса
+                            with gr.Group(visible=True) as predefined_group:
+                                with gr.Row():
+                                    predefined_voice_select = gr.Dropdown(
+                                        choices=populatePredefinedVoices(),
+                                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
+                                        label="Predefined Voices",
+                                        interactive=True
+                                    )
+                                with gr.Row():    
+                                    predefined_play_btn = gr.Button("▶️ Play/Stop")
                     
-    # Референсные файлы для клонирования
-            with gr.Group(visible=False) as clone_group:
-                with gr.Row():
-                    reference_file_select = gr.Dropdown(
-                        choices=populateReferenceFiles(),
-                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
-                        label="Custom Audio Files",
-                        interactive=True
-                        )
-                with gr.Row(): 
-                    reference_play_btn = gr.Button("▶️ Play/Stop")
-    # Кнопки для работы с референсными файлами ТОЛЬКО ЗДЕСЬ
-                with gr.Row():
-                    reference_upload_btn = gr.UploadButton("📁 Upload Custom Audio",
-                        file_types=[".wav", ".mp3"],
-                        file_count="multiple",
-                        visible=True
-                        )
+                    # Референсные файлы для клонирования
+                            with gr.Group(visible=False) as clone_group:
+                                with gr.Row():
+                                    reference_file_select = gr.Dropdown(
+                                        choices=populateReferenceFiles(),
+                                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
+                                        label="Custom Audio Files",
+                                        interactive=True
+                                    )
+                                with gr.Row(): 
+                                    reference_play_btn = gr.Button("▶️ Play/Stop")
+                        # Кнопки для работы с референсными файлами ТОЛЬКО ЗДЕСЬ
+                                with gr.Row():
+                                    reference_upload_btn = gr.UploadButton("📁 Upload Custom Audio",
+                                        file_types=[".wav", ".mp3"],
+                                        file_count="multiple",
+                                        visible=True
+                                    )
 
-            reference_audio_player = gr.Audio(
-                visible=False,
-                label="",
-                interactive=False,
-                show_label=False,
-                elem_id="reference-audio-player",
-                autoplay=False  # изначально выключено
-                )  
-            reference_audio_trigger = gr.Audio(
-                visible=False,
-                elem_id="reference-audio-trigger"
-                ) 
-            predefined_play_btn.click(
-                fn=lambda file: toggle_voice_audio(file, "predefined"),
-                inputs=[predefined_voice_select],
-                outputs=[
-                        reference_audio_player,  # основной аудиоплеер
-                        predefined_play_btn,     # текст кнопки
-                        reference_audio_player,  # видимость
-                        reference_audio_player   # autoplay
-                        ]
-                )
-            reference_play_btn.click(
-                fn=lambda file: toggle_voice_audio(file, "custom"),
-                inputs=[reference_file_select],
-                outputs=[
-                        reference_audio_player,  # основной аудиоплеер
-                        reference_play_btn,      # текст кнопки
-                        reference_audio_player,  # видимость
-                        reference_audio_player   # autoplay
-                        ]
-                )
-            reference_upload_btn.upload(
-                fn=on_reference_upload,
-                inputs=[reference_upload_btn],
-                outputs=[reference_file_select]
-                )
-            voice_mode_radio.change(
-                fn=toggleVoiceOptionsDisplay,
-                inputs=[voice_mode_radio],
-                outputs=[predefined_group, clone_group]
-                )  
-    return voice_mode_radio,predefined_voice_select,reference_file_select    
+                            reference_audio_player = gr.Audio(
+                                    visible=False,
+                                    label="",
+                                    interactive=False,
+                                    show_label=False,
+                                    elem_id="reference-audio-player",
+                                    autoplay=False  # изначально выключено
+                                )  
+                            reference_audio_trigger = gr.Audio(
+                                    visible=False,
+                                    elem_id="reference-audio-trigger"
+                                ) 
+                            predefined_play_btn.click(
+                                    fn=lambda file: toggle_voice_audio(file, "predefined"),
+                                    inputs=[predefined_voice_select],
+                                    outputs=[
+                                            reference_audio_player,  # основной аудиоплеер
+                                            predefined_play_btn,     # текст кнопки
+                                            reference_audio_player,  # видимость
+                                            reference_audio_player   # autoplay
+                                            ]
+                                    )
+                            reference_play_btn.click(
+                                    fn=lambda file: toggle_voice_audio(file, "custom"),
+                                    inputs=[reference_file_select],
+                                    outputs=[
+                                        reference_audio_player,  # основной аудиоплеер
+                                        reference_play_btn,      # текст кнопки
+                                        reference_audio_player,  # видимость
+                                        reference_audio_player   # autoplay
+                                        ]
+                                    )
+                            reference_upload_btn.upload(
+                                    fn=on_reference_upload,
+                                    inputs=[reference_upload_btn],
+                                    outputs=[reference_file_select]
+                                    )
+                            voice_mode_radio.change(
+                                    fn=toggleVoiceOptionsDisplay,
+                                    inputs=[voice_mode_radio],
+                                    outputs=[predefined_group, clone_group]
+                                    )  
+                    return voice_mode_radio,predefined_voice_select,reference_file_select    
 def create_gradio_interface():
     """Создание полного интерфейса Gradio на основе index.html"""
     
@@ -788,6 +1088,12 @@ def create_gradio_interface():
                 vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
 
                 def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_vc,predefined_voice_id,reference_audio_filename):
+                    # Defensive: None means Gradio didn't get file yet
+                    #if not input_audio_path or not os.path.exists(input_audio_path):
+                    #    raise gr.Error("Please upload or record an input audio file.")
+                    #if not target_voice_audio_path or not os.path.exists(target_voice_audio_path):
+                    #    raise gr.Error("Please upload or record a target/reference voice audio file.")
+
                     audio_prompt_path = None
                     if voice_mode_vc == "predefined":
                         voices_dir = get_predefined_voices_path(ensure_absolute=True)
@@ -800,6 +1106,11 @@ def create_gradio_interface():
                         max_dur = config_manager.get_int("audio_output.max_reference_duration_sec", 600)
                         is_valid, msg = utils.validate_reference_audio(potential_path, max_dur)
                         target_voice_audio_path = potential_path
+
+
+
+
+
                     sr, out_wav = voice_conversion(
                         input_audio_path,
                         target_voice_audio_path,
@@ -855,13 +1166,13 @@ def create_gradio_interface():
                 with gr.Row():
                         generate_btn = gr.Button("🎵 Generate Speech",elem_id="generate-btn")
                         accent_btn = gr.Button("🇷🇺 Stress")
-#                with gr.Row():        
-#                    # Уведомления (аналог popup-msg)
-#                        notification_display = gr.JSON(
-#                            label="Notifications",
-#                            value={},
-#                            visible=False
-#                        )
+                with gr.Row():        
+                    # Уведомления (аналог popup-msg)
+                        notification_display = gr.JSON(
+                            label="Notifications",
+                            value={},
+                            visible=False
+                        )
                 with gr.Group():
                     with gr.Row():                
                 # Настройки разделения текста (аналог Split text into chunks)
@@ -1042,8 +1353,41 @@ def create_gradio_interface():
                             interactive=True
                             )
 
+
+                        
+
+
+                        
+            
+            # Кнопки управления конфигурацией
+                with gr.Row():
+                    save_config_btn = gr.Button("💾 Save Server Configuration", variant="primary")
+                #restart_server_btn = gr.Button("🔄 Restart Server", variant="secondary", visible=False)
+            
+            # Статус конфигурации
+            #config_status = gr.Textbox(
+            #    label="Configuration Status",
+            #    value="",
+            #    interactive=False,
+            #    visible=False
+            #)        
+
+
+
+
+
+
+
+
         # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
 
+        save_config_btn.click(
+            fn=save_settings_endpoint,
+            inputs=[config_tts_engine_device, config_tts_engine_reference_audio_path, config_tts_engine_predefined_voices_path, 
+                config_tts_engine_default_voice_id, config_tts_engine_default_voice_clone,
+                config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
+                speed_factor_slider, language_select, config_audio_output_format,config_audio_output_sample_rate]
+        )
         
 
         # Основная кнопка Generate
@@ -1083,21 +1427,29 @@ def create_gradio_interface():
             outputs=[char_count]
         )
         
+        # Переключение режимов голоса
 
         
+#        # Переключение видимости настроек чанкинга
+#        split_text_toggle.change(
+#            fn=toggleChunkControlsVisibility,
+#            inputs=[split_text_toggle],
+#            outputs=[chunk_size_slider, chunk_size_value_display]
+#        )
+        
         # Автоматическое скрытие уведомлений через 3 секунды
-#        def hide_notification():
-#            time.sleep(3)
-#            return gr.update(visible=False)
+        def hide_notification():
+            time.sleep(3)
+            return gr.update(visible=False)
         
         # Добавляем скрытие уведомлений
-#        notification_display.change(
-#            fn=lambda: gr.update(visible=True),
-#            outputs=[notification_display]
-#        ).then(
-#            fn=hide_notification,
-#            outputs=[notification_display]
-#        )
+        notification_display.change(
+            fn=lambda: gr.update(visible=True),
+            outputs=[notification_display]
+        ).then(
+            fn=hide_notification,
+            outputs=[notification_display]
+        )
     
     return demo
 
@@ -1122,7 +1474,7 @@ def main():
     server_host = get_host()
     server_port = get_port()
     
-#    logger.info(f"Starting TTS Server on http://{server_host}:{server_port}")
+    logger.info(f"Starting TTS Server on http://{server_host}:{server_port}")
     logger.info(f"Web UI available at http://{server_host}:{server_port}")
     
     # Запуск Gradio
