@@ -918,6 +918,12 @@ def voice_change(current_config):
 def create_gradio_interface():
     """Создание полного интерфейса Gradio на основе index.html"""
     
+
+
+    root_path = Path(__file__).parent
+    predefined_path = root_path / 'voice'
+    reerence_path = root_path / 'reference_audio'
+    presets_file = ui_static_path / "presets.yaml"
     # Загружаем начальные данные
     initial_data = get_ui_initial_data()
     print('zzzzzzzzzzzzzzz',initial_data)
@@ -962,7 +968,7 @@ def create_gradio_interface():
 
                     audio_prompt_path = None
                     if voice_mode_vc == "predefined":
-                        voices_dir = get_predefined_voices_path(ensure_absolute=True)
+                        voices_dir = predefined_path
                         print('qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq',voices_dir)
                         potential_path = voices_dir / predefined_voice_id
                         target_voice_audio_path = potential_path
