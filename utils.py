@@ -841,9 +841,9 @@ def remove_long_unvoiced_segments(
     Returns:
         NumPy audio array with long unvoiced segments removed. Original if Parselmouth not available or on error.
     """
-    if not PARSELMOUTH_AVAILABLE:
-        logger.warning("Parselmouth not available, skipping unvoiced segment removal.")
-        return audio_array
+    #if not PARSELMOUTH_AVAILABLE:
+    #    logger.warning("Parselmouth not available, skipping unvoiced segment removal.")
+    #    return audio_array
     if audio_array is None or audio_array.size == 0:
         return audio_array
 
