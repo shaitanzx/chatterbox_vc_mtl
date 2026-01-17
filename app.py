@@ -361,6 +361,7 @@ def custom_tts_endpoint(
     split_text: bool = False,
     chunk_size: int = 120,
     output_format: str = "mp3",
+    output_sample_rate: Optional[int] = None,
     audio_name: Optional[str] = None
 ) -> Tuple[Optional[str], str]:  # (audio_file_path, status_message)
     """Original TTS generation function from server.py"""
@@ -470,14 +471,17 @@ def custom_tts_endpoint(
         
         # Кодирование аудио (аналог строк 802-815 server.py)
         output_format_str = output_format if output_format else get_audio_output_format()
-        final_output_sample_rate = get_audio_sample_rate()
-        
+        if output_sample_rate is not None:
+            final_output_sample_rate = output_sample_rate
+        else:
+            final_output_sample_rate = get_audio_sample_rate()
+    
         encoded_audio_bytes = utils.encode_audio(
             audio_array=final_audio_np,
             sample_rate=engine_output_sample_rate,
             output_format=output_format_str,
-            target_sample_rate=final_output_sample_rate,
-        )
+            target_sample_rate=final_output_sample_rate,  # ← используем определенный sample rate
+            )
         
         if encoded_audio_bytes is None:
             return None, "Failed to encode audio to requested format."
@@ -631,6 +635,7 @@ def on_generate_click(
     split_text: bool,
     chunk_size: int,
     output_format: str,
+    config_audio_output_sample_rate: int,
     audio_name: str
 ) -> Tuple[Optional[str], str, Dict[str, str]]:
     """Основной обработчик кнопки Generate (аналог из script.js)"""
@@ -664,6 +669,7 @@ def on_generate_click(
         split_text=split_text,
         chunk_size=chunk_size,
         output_format=output_format,
+        output_sample_rate=config_audio_output_sample_rate,
         audio_name=audio_name
     )
     gr.Info(message)
@@ -1250,6 +1256,7 @@ def create_gradio_interface():
                 split_text_toggle,
                 chunk_size_slider,
                 config_audio_output_format,
+                config_audio_output_sample_rate,
                 audio_name_input
             ],outputs=[audio_output]) \
             .then (lambda: (gr.update(interactive=True)),outputs=[generate_btn])
