@@ -823,117 +823,114 @@ def fix_internal_silence(
 def remove_long_unvoiced_segments(
     audio_array: np.ndarray,
     sample_rate: int,
-    min_noise_duration_ms: int = 300,
+    min_unvoiced_duration_ms: int = 300,
     pitch_floor: float = 75.0,
     pitch_ceiling: float = 600.0,
-    silence_threshold_db: float = -50.0,
-    noise_energy_threshold_db: float = -35.0,
-    frame_size_ms: int = 25,
-    hop_size_ms: int = 10,
 ) -> np.ndarray:
     """
-    Advanced noise removal using spectral analysis.
+    Removes segments from a NumPy audio array that are unvoiced for longer than
+    the specified duration, using Parselmouth for pitch analysis.
+
+    Args:
+        audio_array: NumPy array (float32) of the audio.
+        sample_rate: Sample rate of the audio.
+        min_unvoiced_duration_ms: Minimum duration (ms) of an unvoiced segment to be removed.
+        pitch_floor: Minimum pitch (Hz) to consider for voicing.
+        pitch_ceiling: Maximum pitch (Hz) to consider for voicing.
+
+    Returns:
+        NumPy audio array with long unvoiced segments removed. Original if Parselmouth not available or on error.
     """
     if not PARSELMOUTH_AVAILABLE:
-        logger.warning("Parselmouth not available, skipping noise removal.")
+        logger.warning("Parselmouth not available, skipping unvoiced segment removal.")
         return audio_array
-    
+    if audio_array is None or audio_array.size == 0:
+        return audio_array
+
     try:
-        import librosa
-        import scipy.signal as signal
-        
-        # Конвертируем пороги
-        silence_threshold = 10 ** (silence_threshold_db / 20)
-        noise_energy_threshold = 10 ** (noise_energy_threshold_db / 20)
-        
-        # Параметры фреймов
-        frame_size = int(frame_size_ms * sample_rate / 1000)
-        hop_size = int(hop_size_ms * sample_rate / 1000)
-        
-        # Анализ по фреймам
-        frames = librosa.util.frame(audio_array, frame_length=frame_size, hop_length=hop_size)
-        num_frames = frames.shape[1]
-        
-        # Вычисляем характеристики для каждого фрейма
-        is_noise_frame = np.zeros(num_frames, dtype=bool)
-        
-        for i in range(num_frames):
-            frame = frames[:, i]
-            
-            # 1. Энергия
-            energy = np.sqrt(np.mean(frame ** 2))
-            
-            # 2. Спектральный центроид (шум обычно имеет низкий центроид)
-            spectral_centroid = librosa.feature.spectral_centroid(
-                y=frame, sr=sample_rate, n_fft=frame_size
-            )[0, 0] / (sample_rate / 2)
-            
-            # 3. Спектральная плоскость (шум имеет высокую плоскость)
-            spectral_flatness = librosa.feature.spectral_flatness(y=frame, n_fft=frame_size)[0, 0]
-            
-            # 4. Zero-crossing rate (шум часто имеет высокий ZCR)
-            zcr = librosa.feature.zero_crossing_rate(frame, frame_length=frame_size, hop_length=frame_size)[0, 0]
-            
-            # Критерии классификации шума
-            is_high_energy = energy > noise_energy_threshold
-            is_not_silence = energy > silence_threshold
-            is_high_flatness = spectral_flatness > 0.7
-            is_low_centroid = spectral_centroid < 0.3
-            
-            # Комбинированный критерий для шума
-            is_noise_frame[i] = (
-                is_not_silence and 
-                is_high_energy and 
-                (is_high_flatness or is_low_centroid)
-            )
-        
-        # Группируем шумовые фреймы в сегменты
-        segments_to_keep = []
-        current_pos = 0
-        min_noise_frames = int(min_noise_duration_ms / hop_size_ms)
-        
-        i = 0
-        while i < num_frames:
-            if is_noise_frame[i]:
-                # Находим границы шумового сегмента
-                j = i
-                while j < num_frames and is_noise_frame[j]:
-                    j += 1
-                
-                noise_duration_frames = j - i
-                
-                if noise_duration_frames >= min_noise_frames:
-                    # Удаляем длинный шумовой сегмент
-                    noise_start_sample = i * hop_size
-                    noise_end_sample = min(j * hop_size + frame_size, len(audio_array))
-                    
-                    # Сохраняем часть до шума
-                    if noise_start_sample > current_pos:
-                        segments_to_keep.append(audio_array[current_pos:noise_start_sample])
-                    
-                    current_pos = noise_end_sample
-                    logger.info(f"Removed noise: {noise_start_sample/sample_rate:.2f}-{noise_end_sample/sample_rate:.2f}s")
-                
-                i = j
-            else:
-                i += 1
-        
-        # Добавляем остаток
-        if current_pos < len(audio_array):
-            segments_to_keep.append(audio_array[current_pos:])
-        
-        if segments_to_keep:
-            return np.concatenate(segments_to_keep)
-        else:
-            return audio_array
-            
-    except ImportError:
-        logger.warning("Librosa not available, using simple noise removal.")
-        # Fallback на простую версию
-        return remove_long_noise_segments(
-            audio_array, sample_rate, min_noise_duration_ms,
-            pitch_floor, pitch_ceiling, noise_energy_threshold_db
+        sound = parselmouth.Sound(
+            audio_array.astype(np.float64), sampling_frequency=sample_rate
         )
+        pitch = sound.to_pitch(pitch_floor=pitch_floor, pitch_ceiling=pitch_ceiling)
+        # ИЗМЕНЕНИЕ: Получаем значения питча вместо get_VoicedVoicelessUnvoiced()
+        pitch_values = pitch.selected_array['frequency']
+        
+        # ИЗМЕНЕНИЕ: Определяем вокализованные фреймы (pitch > 0 = voiced)
+        voiced_frames = pitch_values > 0
+        
+        # ИЗМЕНЕНИЕ: Получаем временные метки для фреймов
+        time_step = pitch.get_time_step()
+        start_time = pitch.get_start_time()
+        frame_times = [start_time + i * time_step for i in range(len(pitch_values))]
+        
+        segments_to_keep = []
+        current_segment_start_sample = 0
+        min_unvoiced_samples = int((min_unvoiced_duration_ms / 1000.0) * sample_rate)
+
+        # ИЗМЕНЕНИЕ: Обрабатываем фреймы вместо интервалов
+        i = 0
+        while i < len(voiced_frames):
+            # Находим начало сегмента
+            is_voiced_current = voiced_frames[i]
+            
+            # Находим конец текущего сегмента (где меняется состояние)
+            j = i
+            while j < len(voiced_frames) and voiced_frames[j] == is_voiced_current:
+                j += 1
+            
+            # Определяем временные границы сегмента
+            segment_start_time = frame_times[i]
+            segment_end_time = frame_times[j-1] + time_step if j < len(frame_times) else frame_times[-1] + time_step
+            
+            # Конвертируем время в сэмплы
+            segment_start_sample = int(segment_start_time * sample_rate)
+            segment_end_sample = int(segment_end_time * sample_rate)
+            segment_duration_samples = segment_end_sample - segment_start_sample
+            
+            # Ограничиваем границы размерами массива
+            segment_start_sample = min(max(segment_start_sample, 0), len(audio_array))
+            segment_end_sample = min(max(segment_end_sample, 0), len(audio_array))
+            
+            if is_voiced_current:  # Вокализованный сегмент
+                # Добавляем весь сегмент
+                if segment_start_sample < segment_end_sample:
+                    segments_to_keep.append(audio_array[segment_start_sample:segment_end_sample])
+                current_segment_start_sample = segment_end_sample
+            else:  # Невокализованный сегмент
+                if segment_duration_samples < min_unvoiced_samples:
+                    # Короткий невокализованный сегмент - сохраняем
+                    if segment_start_sample < segment_end_sample:
+                        segments_to_keep.append(audio_array[segment_start_sample:segment_end_sample])
+                    current_segment_start_sample = segment_end_sample
+                else:
+                    # Длинный невокализованный сегмент - удаляем
+                    logger.debug(
+                        f"Removing long unvoiced segment from {segment_start_time:.2f}s to {segment_end_time:.2f}s."
+                    )
+                    # Добавляем только часть перед этим сегментом
+                    if segment_start_sample > current_segment_start_sample:
+                        segments_to_keep.append(
+                            audio_array[current_segment_start_sample:segment_start_sample]
+                        )
+                    current_segment_start_sample = segment_end_sample
+            
+            i = j  # Переходим к следующему сегменту
+
+        # ИЗМЕНЕНИЕ: Добавляем оставшуюся часть аудио
+        if current_segment_start_sample < len(audio_array):
+            segments_to_keep.append(audio_array[current_segment_start_sample:])
+
+        if not segments_to_keep:
+            logger.warning(
+                "Unvoiced segment removal resulted in empty audio; returning original."
+            )
+            return audio_array
+
+        return np.concatenate(segments_to_keep)
+
+    except Exception as e:
+        logger.error(f"Error during unvoiced segment removal: {e}", exc_info=True)
+        return audio_array
 
 
 # --- Text Processing Utilities ---
