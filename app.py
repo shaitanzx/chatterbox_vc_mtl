@@ -362,7 +362,8 @@ def custom_tts_endpoint(
     chunk_size: int = 120,
     output_format: str = "mp3",
     output_sample_rate: Optional[int] = None,
-    audio_name: Optional[str] = None
+    audio_name: Optional[str] = None,
+    silence_trimming: bool = False,
 ) -> Tuple[Optional[str], str]:  # (audio_file_path, status_message)
     """Original TTS generation function from server.py"""
     
@@ -448,7 +449,7 @@ def custom_tts_endpoint(
         )
 #############################################################        
         # Применение аудио-обработки
-        if config_manager.get_bool("audio_processing.enable_silence_trimming", False):
+        if silence_trimming:
             final_audio_np = utils.trim_lead_trail_silence(
                 final_audio_np, engine_output_sample_rate
             )
@@ -636,7 +637,8 @@ def on_generate_click(
     chunk_size: int,
     output_format: str,
     config_audio_output_sample_rate: int,
-    audio_name: str
+    audio_name: str,
+    silence_trimming: bool
 ) -> Tuple[Optional[str], str, Dict[str, str]]:
     """Основной обработчик кнопки Generate (аналог из script.js)"""
     
@@ -670,7 +672,8 @@ def on_generate_click(
         chunk_size=chunk_size,
         output_format=output_format,
         output_sample_rate=config_audio_output_sample_rate,
-        audio_name=audio_name
+        audio_name=audio_name,
+        silence_trimming=silence_trimming
     )
     gr.Info(message)
     return gr.update (value=audio_file, visible=True)
@@ -1125,6 +1128,10 @@ def create_gradio_interface():
                                         label="Audio Output Format",
                                         interactive=True
                                         )
+                                    silence_trimming =gr.Checkbox(
+                                        label="enable_silence_trimming",
+                                        value=current_config.get("audio_processing", {}).get("enable_silence_trimming", "False")
+                            )
 
                 with gr.Accordion("📚 Example Presets", open=False):
                     with gr.Row():

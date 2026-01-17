@@ -54,5 +54,5 @@ ui:
   max_predefined_voices_in_dropdown: 50
 debug:
   save_intermediate_audio: false
-audio_processing
+audio_processing:
   enable_silence_trimming: true
