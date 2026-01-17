@@ -1266,7 +1266,8 @@ def create_gradio_interface():
                 chunk_size_slider,
                 config_audio_output_format,
                 config_audio_output_sample_rate,
-                audio_name_input
+                audio_name_input,
+                silence_trimming)
             ],outputs=[audio_output]) \
             .then (lambda: (gr.update(interactive=True)),outputs=[generate_btn])
         
