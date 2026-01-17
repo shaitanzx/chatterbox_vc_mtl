@@ -1070,10 +1070,10 @@ def create_gradio_interface():
         
         # Заголовок (аналог navbar из index.html)
         gr.Markdown(f"# 🎤 {get_ui_title()}")
-        with gr.Tabs():
+        #with gr.Tabs():
 
             # === VC TAB: Voice Conversion Tab ===
-            with gr.Tab("🎤 Voice Conversion (VC)"):
+        with gr.Tab("🎤 Voice Conversion (VC)"):
                 gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target voice audio.")
                 with gr.Row():
                     with gr.Column():
@@ -1100,7 +1100,7 @@ def create_gradio_interface():
                         potential_path = voices_dir / predefined_voice_id
                         target_voice_audio_path = potential_path
             
-                    elif voice_mode == "custom":
+                    elif voice_mode_vc == "custom":
                         ref_dir = get_reference_audio_path(ensure_absolute=True)
                         potential_path = ref_dir / reference_audio_filename
                         max_dur = config_manager.get_int("audio_output.max_reference_duration_sec", 600)
@@ -1131,7 +1131,7 @@ def create_gradio_interface():
                     outputs=[vc_output_files, vc_output_audio]) \
                     .then (lambda: (gr.update(interactive=True),gr.update(visible=True)),outputs=[vc_convert_btn,vc_output_audio])
 
-            with gr.Tab("🎵 MTL Generation"):
+        with gr.Tab("🎵 MTL Generation"):
         
                 with gr.Row():
                         gr.Markdown("### Text to synthesize")
