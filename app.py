@@ -605,66 +605,8 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
     return (0.7, 1.0, 7.0, 1.0, -1)
 
 # --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
-
-def on_generate_click(
-    text: str,
-    voice_mode: str,
-    predefined_voice: str,
-    reference_file: str,
-    temperature: float,
-    exaggeration: float,
-    cfg_weight: float,
-    speed_factor: float,
-    seed: int,
-    language: str,
-    split_text: bool,
-    chunk_size: int,
-    output_format: str,
-    config_audio_output_sample_rate: int,
-    audio_name: str,
-    silence_trimming: bool,
-    internal_silence_fix: bool,
-    unvoiced_removal: bool
-) -> Tuple[Optional[str], str, Dict[str, str]]:
-    """Основной обработчик кнопки Generate (аналог из script.js)"""
+def postprocess(audio_file,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate):
     
-    # Валидация (аналог строк 545-560 script.js)
-    if not text or text.strip() == "":
-        return None
-    
-    if voice_mode == "predefined" and predefined_voice == "none":
-        return None
-    
-    if voice_mode == "custom" and reference_file == "none":
-        return None
-    
-    # Проверка предупреждений (аналог строк 562-570 script.js)
-    # (в Gradio можно добавить чекбоксы для отключения предупреждений)
-    
-    # Вызов TTS генерации
-    language=extract_language_code(language)
-    audio_file, message = custom_tts_endpoint(
-        text=text,
-        voice_mode=voice_mode,
-        predefined_voice_id=predefined_voice if predefined_voice != "none" else None,
-        reference_audio_filename=reference_file if reference_file != "none" else None,
-        temperature=temperature,
-        exaggeration=exaggeration,
-        cfg_weight=cfg_weight,
-        speed_factor=speed_factor,
-        seed=seed,
-        language=language,
-        split_text=split_text,
-        chunk_size=chunk_size,
-        output_format=output_format,
-        output_sample_rate=config_audio_output_sample_rate,
-        audio_name=audio_name,
-        #silence_trimming=silence_trimming,
-        #internal_silence_fix=internal_silence_fix,
-        #unvoiced_removal=unvoiced_removal
-    )
-    gr.Info(message)
-    if audio_file !=None:
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
             audio_data = utils.trim_lead_trail_silence(
@@ -726,7 +668,69 @@ def on_generate_click(
         
         with open(file_path, "wb") as f:
             f.write(encoded_audio_bytes)
+
+        return file_path
         
+def on_generate_click(
+    text: str,
+    voice_mode: str,
+    predefined_voice: str,
+    reference_file: str,
+    temperature: float,
+    exaggeration: float,
+    cfg_weight: float,
+    speed_factor: float,
+    seed: int,
+    language: str,
+    split_text: bool,
+    chunk_size: int,
+    output_format: str,
+    config_audio_output_sample_rate: int,
+    audio_name: str,
+    silence_trimming: bool,
+    internal_silence_fix: bool,
+    unvoiced_removal: bool
+) -> Tuple[Optional[str], str, Dict[str, str]]:
+    """Основной обработчик кнопки Generate (аналог из script.js)"""
+    
+    # Валидация (аналог строк 545-560 script.js)
+    if not text or text.strip() == "":
+        return None
+    
+    if voice_mode == "predefined" and predefined_voice == "none":
+        return None
+    
+    if voice_mode == "custom" and reference_file == "none":
+        return None
+    
+    # Проверка предупреждений (аналог строк 562-570 script.js)
+    # (в Gradio можно добавить чекбоксы для отключения предупреждений)
+    
+    # Вызов TTS генерации
+    language=extract_language_code(language)
+    audio_file, message = custom_tts_endpoint(
+        text=text,
+        voice_mode=voice_mode,
+        predefined_voice_id=predefined_voice if predefined_voice != "none" else None,
+        reference_audio_filename=reference_file if reference_file != "none" else None,
+        temperature=temperature,
+        exaggeration=exaggeration,
+        cfg_weight=cfg_weight,
+        speed_factor=speed_factor,
+        seed=seed,
+        language=language,
+        split_text=split_text,
+        chunk_size=chunk_size,
+        output_format=output_format,
+        output_sample_rate=config_audio_output_sample_rate,
+        audio_name=audio_name,
+        silence_trimming=silence_trimming,
+        internal_silence_fix=internal_silence_fix,
+        unvoiced_removal=unvoiced_removal
+    )
+    gr.Info(message)
+    if audio_file !=None:
+        file_path = postprocess(audio_file,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate)
     else:
         file_path = audio_file
 
@@ -765,12 +769,6 @@ def on_reference_upload(files: List[gr.File]):
             # Выбираем первый загруженный файл по умолчанию
             default_selection = uploaded_files[0] if uploaded_files else "none"
             updated_options = all_files
-
-            #notification = show_notification(
-            #    f"✅ Uploaded: {', '.join(uploaded_files[:3])}" + 
-            #    ("..." if len(uploaded_files) > 3 else ""),
-            #    "success"
-            #)
             
             return gr.update(choices=updated_options,value=default_selection)
         else:
@@ -1333,7 +1331,7 @@ def create_gradio_interface():
         
 
         # Основная кнопка Generate
-        generate_btn.click(lambda: (gr.update(interactive=False)),outputs=[generate_btn]) \
+        generate_btn.click(lambda: (gr.update(interactive=False),gr.update(interactive=False)),outputs=[generate_btn,post_btn]) \
             .then(fn=on_generate_click,inputs=[
                 text_area,
                 voice_mode_radio,
@@ -1354,8 +1352,10 @@ def create_gradio_interface():
                 internal_silence_fix,
                 unvoiced_removal
             ],outputs=[audio_output,post_output,post_btn]) \
-            .then (lambda: (gr.update(interactive=True)),outputs=[generate_btn])
-        
+            .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
+        post_btn.click(lambda: (gr.update(interactive=False),gr.update(interactive=False)),outputs=[generate_btn,post_btn]) \
+            .then(postprocess,input=[audio_output,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate], output=[audio_output,post_output,post_btn]) \
+            .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
         # Кнопки управления текстом
 
         accent_btn.click(
