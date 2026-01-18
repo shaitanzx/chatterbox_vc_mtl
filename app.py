@@ -730,7 +730,7 @@ def on_generate_click(
     )
     gr.Info(message)
     if audio_file !=None:
-        file_path = postprocess(audio_file,silence_trimming,unvoiced_removal,output_format,config_audio_output_sample_rate)
+        file_path = postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate)
     else:
         file_path = audio_file
 
