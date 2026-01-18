@@ -1,5 +1,3 @@
-
-
 import os
 from config import (
     config_manager,
@@ -20,127 +18,16 @@ from config import (
     get_full_config_for_template,
     get_audio_output_format,
 )
-
-import logging
-from pathlib import Path
-
-# Configure basic logging for the model checker
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-model_logger = logging.getLogger("ModelChecker")
-
-# Define the list of core model files (из первого скрипта)
-CHATTERBOX_MODEL_FILES = [
-    "ve.pt",  # Voice Encoder model
-    "t3_cfg.pt",  # T3 model (Transformer Text-to-Token)
-    "s3gen.pt",  # S3Gen model (Token-to-Waveform)
-    "tokenizer.json",  # Text tokenizer configuration
-    "conds.pt",  # Default conditioning data (e.g., for default voice)
-    "Cangjie5_TC.json",
-    "s3gen.safetensors",
-    "grapheme_mtl_merged_expanded_v1.json",
-    "t3_mtl23ls_v2.safetensors"
-]
-
-def check_and_download_model_files():
-    """
-    Проверяет наличие файлов модели и скачивает недостающие.
-    Интегрированная версия из download_model.py
-    """
-    model_logger.info("--- Checking TTS Engine Model Files ---")
-    
-    model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
-    model_cache_path = Path(model_cache_path_str).resolve()
-    model_repo_id = config_manager.get_string("model.repo_id", "ResembleAI/chatterbox")
-    
-    model_logger.info(f"Target model repository: {model_repo_id}")
-    model_logger.info(f"Local model directory: {model_cache_path}")
-    
-    # Ensure the target local directory exists
-    try:
-        model_cache_path.mkdir(parents=True, exist_ok=True)
-        model_logger.info(f"Ensured model directory exists: {model_cache_path}")
-    except Exception as e:
-        model_logger.error(f"Could not create or access model directory '{model_cache_path}': {e}")
-        return False
-    
-    # Проверяем какие файлы уже есть
-    existing_files = []
-    missing_files = []
-    
-    for filename in CHATTERBOX_MODEL_FILES:
-        file_path = model_cache_path / filename
-        if file_path.exists():
-            existing_files.append(filename)
-            model_logger.debug(f"Found: {filename}")
-        else:
-            missing_files.append(filename)
-            model_logger.warning(f"Missing: {filename}")
-    
-    if not missing_files:
-        model_logger.info(f"✅ All {len(existing_files)} model files are present.")
-        return True
-    
-    model_logger.info(f"Found {len(existing_files)} files, missing {len(missing_files)} files")
-    model_logger.info("Downloading missing files...")
-    
-    # Импортируем huggingface_hub только при необходимости
-    try:
-        from huggingface_hub import hf_hub_download
-    except ImportError:
-        model_logger.error("huggingface_hub not installed. Install with: pip install huggingface-hub")
-        return False
-    
-    # Скачиваем недостающие файлы
-    all_successful = True
-    for filename in missing_files:
-        try:
-            model_logger.info(f"Downloading '{filename}'...")
-            hf_hub_download(
-                repo_id=model_repo_id,
-                filename=filename,
-                local_dir=model_cache_path,
-                local_dir_use_symlinks=False,
-                force_download=False,
-                resume_download=True,
-            )
-            model_logger.info(f"Successfully downloaded '{filename}'")
-        except Exception as e:
-            model_logger.error(f"Failed to download '{filename}': {e}")
-            all_successful = False
-    
-    if all_successful:
-        model_logger.info("✅ All missing model files downloaded successfully.")
-    else:
-        model_logger.warning("⚠️ Some model files failed to download.")
-    
-    return all_successful
-
-# Вызываем проверку файлов СРАЗУ
-model_check_success = check_and_download_model_files()
-if not model_check_success:
-    model_logger.warning("Model file check/download had issues, but continuing anyway...")
-
-
-
 model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
 
-os.environ["HF_HOME"] = str(model_cache_path)
-os.environ["HF_HUB_CACHE"] = str(model_cache_path)
-os.environ["TRANSFORMERS_CACHE"] = str(model_cache_path)
-os.environ["TORCH_HOME"] = str(model_cache_path)
-os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_cache_path)
-
-# Важно: форсируем офлайн режим чтобы huggingface не проверял онлайн
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
-os.environ["HF_DATASETS_OFFLINE"] = "1"
-
-print(f"Model cache path set to: {model_cache_path}")
-
-
+# Устанавливаем переменные окружения ПЕРЕД любыми импортами huggingface
+# os.environ["HF_HOME"] = str(model_cache_path)
+# os.environ["HF_HUB_CACHE"] = str(model_cache_path)
+# os.environ["TRANSFORMERS_CACHE"] = str(model_cache_path)
+# os.environ["TORCH_HOME"] = str(model_cache_path)
+# os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_cache_path)
+# os.environ["XDG_CACHE_HOME"] = str(model_cache_path.parent)
+#print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',os.path.abspath(model_cache_path))
 from pathlib import Path
 import gradio as gr
 import torch
@@ -1498,31 +1385,12 @@ def main():
     # Загрузка TTS модели
     logger.info("Initializing TTS Server...")
     
-    
-    required_files = CHATTERBOX_MODEL_FILES[:5]  # первые 5 самых важных файлов
-    model_cache = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
-    
-    critical_missing = []
-    for file in required_files:
-        if not (model_cache / file).exists():
-            critical_missing.append(file)
-    
-    if critical_missing:
-        logger.warning(f"Critical model files missing: {critical_missing}")
-        logger.warning("Attempting to download missing critical files...")
-        # Попробуем скачать критические файлы еще раз
-        check_and_download_model_files()
-    
-    # Загрузка TTS модели
     if not engine.load_model():
         logger.critical("CRITICAL: TTS Model failed to load on startup.")
-        # Дадим подсказку пользователю
-        logger.info("This might be due to missing model files.")
-        logger.info(f"Please check that all files are in: {model_cache}")
-        logger.info("Required files: " + ", ".join(CHATTERBOX_MODEL_FILES))
         return
     
-    logger.info("TTS Model loaded successfully via engine.")    
+    logger.info("TTS Model loaded successfully via engine.")
+    
     # Создание интерфейса
     demo = create_gradio_interface()
     

@@ -178,10 +178,10 @@ def _test_mps_functionality() -> bool:
 
 def load_model() -> bool:
     """
-    Loads the multilingual TTS model by default.
+    Loads the multilingual TTS model by default from local cache.
     """
     global chatterbox_model, MODEL_LOADED, model_device, multilingual_model, MULTILINGUAL_MODEL_LOADED
-    global vc_model, VC_MODEL_LOADED  # ← ДОБАВЛЕНО: глобальные переменные для VC
+    global vc_model, VC_MODEL_LOADED
 
     if MODEL_LOADED:
         logger.info("TTS model is already loaded.")
@@ -209,7 +209,6 @@ def load_model() -> bool:
                 resolved_device_str = "cpu"
                 logger.warning(
                     "CUDA was requested in config but functionality test failed. "
-                    "PyTorch may not be compiled with CUDA support. "
                     "Automatically falling back to CPU."
                 )
 
@@ -221,7 +220,6 @@ def load_model() -> bool:
                 resolved_device_str = "cpu"
                 logger.warning(
                     "MPS was requested in config but functionality test failed. "
-                    "PyTorch may not be compiled with MPS support. "
                     "Automatically falling back to CPU."
                 )
 
@@ -241,33 +239,84 @@ def load_model() -> bool:
             else:
                 resolved_device_str = "cpu"
             logger.info(f"Auto-detection resolved to: {resolved_device_str}")
+        
         model_device = resolved_device_str
         logger.info(f"Final device selection: {model_device}")
 
-        # Load the multilingual engine immediately
+        # Get model cache path from config
+        model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
+        model_cache_path = Path(model_cache_path_str).resolve()
         
-        multilingual_model = PatchedChatterboxTTS.from_pretrained(device=model_device)
+        # Check if model files exist locally
+        required_files = [
+            "ve.pt",
+            "s3gen.pt", 
+            "t3_mtl23ls_v2.safetensors",
+            "grapheme_mtl_merged_expanded_v1.json",
+            "conds.pt"
+        ]
+        
+        missing_files = []
+        for file in required_files:
+            file_path = model_cache_path / file
+            if not file_path.exists():
+                missing_files.append(file)
+        
+        if missing_files:
+            logger.error(f"Missing model files in cache: {missing_files}")
+            logger.error("Please run download_model.py first to download the models.")
+            return False
+        
+        logger.info(f"Loading model from local cache: {model_cache_path}")
+        
+        # Load the multilingual model from local cache
+        multilingual_model = PatchedChatterboxTTS.from_local(
+            ckpt_dir=model_cache_path, 
+            device=model_device
+        )
+        
         chatterbox_model = multilingual_model
         MULTILINGUAL_MODEL_LOADED = True
         MODEL_LOADED = True
 
-        logger.info(f"PatchedChatterboxTTS model loaded successfully on {model_device}.")
+        logger.info(f"PatchedChatterboxTTS model loaded successfully from local cache on {model_device}.")
         logger.info("Multilingual model is now the default for ALL languages.")
         
-        # ↓↓↓ ДОБАВЛЕНО: Загрузка модели Voice Conversion ↓↓↓
+        # ↓↓↓ Load Voice Conversion model ↓↓↓
         try:
-            # Пытаемся загрузить VC модель (но не прерываем загрузку если не получится)
-            logger.info(f"Attempting to load Voice Conversion model on {model_device}...")
-            vc_model = ChatterboxVC.from_pretrained(device=model_device)
-            VC_MODEL_LOADED = True
-            logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
+            logger.info(f"Attempting to load Voice Conversion model from local cache on {model_device}...")
+            
+            # Check if VC model files exist
+            vc_required_files = [
+                "ve.pt",  # Voice encoder is shared
+                # Add other VC-specific files if needed
+            ]
+            
+            vc_missing_files = []
+            for file in vc_required_files:
+                file_path = model_cache_path / file
+                if not file_path.exists():
+                    vc_missing_files.append(file)
+            
+            if vc_missing_files:
+                logger.warning(f"Missing VC model files: {vc_missing_files}")
+                logger.warning("Voice Conversion will not be available.")
+                vc_model = None
+                VC_MODEL_LOADED = False
+            else:
+                # Load VC model from local cache
+                vc_model = ChatterboxVC.from_local(
+                    ckpt_dir=model_cache_path,
+                    device=model_device
+                )
+                VC_MODEL_LOADED = True
+                logger.info(f"Voice Conversion model loaded successfully from local cache on {model_device}.")
+                
         except Exception as vc_e:
             logger.warning(f"Failed to load Voice Conversion model: {vc_e}")
             logger.warning("Voice Conversion tab will not be available.")
-            # Не сбрасываем флаг загрузки основной модели даже если VC не загрузилась
             vc_model = None
             VC_MODEL_LOADED = False
-        # ↑↑↑ ДОБАВЛЕНО: Загрузка модели Voice Conversion ↑↑↑
 
         return True
 
@@ -282,8 +331,7 @@ def load_model() -> bool:
 
 def load_multilingual_model() -> bool:
     """
-    Loads the multilingual TTS model, unloads the standard model,
-    and sets the multilingual model as the default for all languages.
+    Loads the multilingual TTS model from local cache.
     """
     global multilingual_model, MULTILINGUAL_MODEL_LOADED, model_device
     global chatterbox_model, MODEL_LOADED
@@ -306,16 +354,23 @@ def load_multilingual_model() -> bool:
         logger.info("Standard model unloaded and memory cleared.")
 
     try:
-        logger.info(f"Loading multilingual model (PatchedChatterboxTTS) on {model_device}...")
+        # Get model cache path from config
+        model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
+        model_cache_path = Path(model_cache_path_str).resolve()
+        
+        logger.info(f"Loading multilingual model (PatchedChatterboxTTS) from local cache: {model_cache_path} on {model_device}...")
 
-        multilingual_model = PatchedChatterboxTTS.from_pretrained(device=model_device)
+        multilingual_model = PatchedChatterboxTTS.from_local(
+            ckpt_dir=model_cache_path, 
+            device=model_device
+        )
 
         chatterbox_model = multilingual_model
 
         MULTILINGUAL_MODEL_LOADED = True
         MODEL_LOADED = True
 
-        logger.info(f"PatchedChatterboxTTS model loaded successfully on {model_device}.")
+        logger.info(f"PatchedChatterboxTTS model loaded successfully from local cache on {model_device}.")
         logger.info("This model will now be used for ALL languages, including English.")
         return True
 
@@ -326,9 +381,11 @@ def load_multilingual_model() -> bool:
         MULTILINGUAL_MODEL_LOADED = False
         MODEL_LOADED = False
         return False
+
+
 def load_vc_model() -> bool:
     """
-    Загружает модель Voice Conversion.
+    Loads the Voice Conversion model from local cache.
     """
     global vc_model, VC_MODEL_LOADED, model_device
     
@@ -341,13 +398,20 @@ def load_vc_model() -> bool:
         return False
     
     try:
-        logger.info(f"Loading Voice Conversion model on {model_device}...")
+        # Get model cache path from config
+        model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
+        model_cache_path = Path(model_cache_path_str).resolve()
         
-        # Загружаем модель VC
-        vc_model = ChatterboxVC.from_pretrained(device=model_device)
+        logger.info(f"Loading Voice Conversion model from local cache: {model_cache_path} on {model_device}...")
+        
+        # Load VC model from local cache
+        vc_model = ChatterboxVC.from_local(
+            ckpt_dir=model_cache_path,
+            device=model_device
+        )
         VC_MODEL_LOADED = True
         
-        logger.info(f"Voice Conversion model loaded successfully on {model_device}.")
+        logger.info(f"Voice Conversion model loaded successfully from local cache on {model_device}.")
         return True
         
     except Exception as e:
@@ -359,7 +423,7 @@ def load_vc_model() -> bool:
 
 def get_or_load_vc_model() -> Optional[ChatterboxVC]:
     """
-    Получает или загружает модель Voice Conversion.
+    Gets or loads the Voice Conversion model from local cache.
     """
     global vc_model, VC_MODEL_LOADED
     
@@ -368,6 +432,7 @@ def get_or_load_vc_model() -> Optional[ChatterboxVC]:
             return None
     
     return vc_model
+
 
 def synthesize(
     text: str,
