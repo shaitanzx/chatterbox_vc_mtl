@@ -21,6 +21,7 @@ from config import (
 )
 model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
 ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
+from pathlib import Path
 ruaccent_cache_path = Path(ruaccent_cache_path_str).resolve()
 
 # Создаем папку если не существует
@@ -39,7 +40,7 @@ os.environ["RUACCENT_RULES_DIR"] = str(ruaccent_cache_path / "rules")
 # os.environ["HUGGINGFACE_HUB_CACHE"] = str(model_cache_path)
 # os.environ["XDG_CACHE_HOME"] = str(model_cache_path.parent)
 #print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',os.path.abspath(model_cache_path))
-from pathlib import Path
+
 import gradio as gr
 import torch
 import numpy as np
