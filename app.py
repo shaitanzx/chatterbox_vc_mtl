@@ -752,9 +752,9 @@ def on_reference_upload(files: List[gr.File]):
             default_selection = uploaded_files[0] if uploaded_files else "none"
             updated_options = all_files
             
-            return gr.update(choices=updated_options,value=default_selection)
+            return gr.update(choices=updated_options,value=default_selection),gr.update(choices=updated_options)
         else:
-            return gr.update(choices=populateReferenceFiles())
+            return gr.update(choices=populateReferenceFiles()),gr.update(choices=populateReferenceFiles())
             
     except Exception as e:
         logger.error(f"Error in reference upload: {e}", exc_info=True)
@@ -1359,7 +1359,7 @@ def create_gradio_interface():
         upload_button_mtl.upload(
             fn=on_reference_upload,
             inputs=[upload_button_mtl],
-            outputs=[reference_file_select_vc,reference_file_select]
+            outputs=[reference_file_select,reference_file_select_vc]
             )
         # # Автоматическое скрытие уведомлений через 3 секунды
         # def hide_notification():
