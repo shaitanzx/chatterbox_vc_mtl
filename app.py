@@ -605,7 +605,7 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
     return (0.7, 1.0, 7.0, 1.0, -1)
 
 # --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
-def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate):
+def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate,speed_factor):
     
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
@@ -730,7 +730,7 @@ def on_generate_click(
     )
     gr.Info(message)
     if audio_file !=None:
-        file_path = postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate)
+        file_path = postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate,speed_factor)
     else:
         file_path = audio_file
 
