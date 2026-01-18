@@ -1002,8 +1002,12 @@ def create_gradio_interface():
         label = LANGUAGE_LABELS.get(lang_code, lang_code)
         language_options.append(f"{label} ({lang_code})")
     
-    with gr.Blocks(title="Chatterbox Server") as demo:
-        
+    with gr.Blocks(title="Chatterbox Server",theme=gr.themes.Base()) as demo:
+        demo.load(
+            None,
+            None,
+            js="() => {const params = new URLSearchParams(window.location.search);if (!params.has('__theme')) {params.set('__theme', 'dark');window.location.search = params.toString();}}"
+        )    
         # Заголовок (аналог navbar из index.html)
         gr.Markdown(f"# 🎤 {get_ui_title()}")
         #with gr.Tabs():
