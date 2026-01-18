@@ -664,7 +664,6 @@ def on_generate_click(
         #unvoiced_removal=unvoiced_removal
     )
     gr.Info(message)
-    print ('ssssssssssssssssssssssssssss',audio_file)
     if audio_file !=None:
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
@@ -693,7 +692,7 @@ def on_generate_click(
                     engine_output_sample_rate, 
                     speed_factor
                 )
-                final_audio_np = final_audio_tensor.cpu().numpy()
+                audio_data = final_audio_tensor.cpu().numpy()
             except Exception as e:
                 logger.error(f"Failed to apply speed factor: {e}", exc_info=True)
 
@@ -707,7 +706,7 @@ def on_generate_click(
             final_output_sample_rate = get_audio_sample_rate()
     
         encoded_audio_bytes = utils.encode_audio(
-            audio_array=final_audio_np,
+            audio_array=audio_data,
             sample_rate=engine_output_sample_rate,
             output_format=output_format_str,
             target_sample_rate=final_output_sample_rate,  # ← используем определенный sample rate
