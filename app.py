@@ -888,7 +888,7 @@ def voice_change(current_config):
                 with gr.Row():
                     predefined_voice_select = gr.Dropdown(
                         choices=populatePredefinedVoices(),
-                        value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
+                        #value=current_config.get("ui_state", {}).get("last_predefined_voice", "none"),
                         label="Predefined Voices",
                         interactive=True
                         )
@@ -900,7 +900,7 @@ def voice_change(current_config):
                 with gr.Row():
                     reference_file_select = gr.Dropdown(
                         choices=populateReferenceFiles(),
-                        value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
+                        #value=current_config.get("ui_state", {}).get("last_reference_file", "none"),
                         label="Custom Audio Files",
                         interactive=True
                         )
