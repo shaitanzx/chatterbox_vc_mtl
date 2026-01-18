@@ -515,13 +515,13 @@ def custom_tts_endpoint(
         generation_time = time.time() - start_time
         
         return str(file_path), f"✅ Audio generated successfully in {generation_time:.2f}s"
-        
+"""        
     except Exception as e:
         logger.error(f"Error in TTS generation: {e}", exc_info=True)
         return None, f"❌ Error: {str(e)}"
     finally:
         isGenerating = False
-
+"""
 # --- ФУНКЦИИ ИЗ SCRIPT.JS (адаптированные для Gradio) ---
 
 def show_notification(message: str, type: str = "info") -> Dict[str, str]:
