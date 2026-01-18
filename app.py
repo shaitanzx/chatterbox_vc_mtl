@@ -665,7 +665,7 @@ def on_generate_click(
     )
     gr.Info(message)
     if audio_file !=None:
-        audio_data, sample_rate = librosa.load(audio_path, sr=None)
+        audio_data, sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
             audio_data = utils.trim_lead_trail_silence(
                 audio_data, engine_output_sample_rate
