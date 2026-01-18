@@ -946,17 +946,17 @@ def voice_change(current_config):
                         reference_audio_player   # autoplay
                         ]
                 )
-            reference_upload_btn.upload(
-                fn=on_reference_upload,
-                inputs=[reference_upload_btn],
-                outputs=[reference_file_select]
-                )
+#            reference_upload_btn.upload(
+#                fn=on_reference_upload,
+#                inputs=[reference_upload_btn],
+#                outputs=[reference_file_select]
+#                )
             voice_mode_radio.change(
                 fn=toggleVoiceOptionsDisplay,
                 inputs=[voice_mode_radio],
                 outputs=[predefined_group, clone_group]
                 )  
-    return voice_mode_radio,predefined_voice_select,reference_file_select    
+    return voice_mode_radio,predefined_voice_select,reference_file_select,reference_upload_btn    
 
 def create_gradio_interface():
     """Создание полного интерфейса Gradio на основе index.html"""
@@ -999,12 +999,20 @@ def create_gradio_interface():
                     vc_input_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input Audio (to convert)")
                 #vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
                 with gr.Column():
-                    voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc = voice_change(current_config)
+                    voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc, refer_but_up = voice_change(current_config)
             vc_pitch_shift = gr.Number(value=0, label="Pitch", step=0.5, interactive=True)
             disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
             vc_convert_btn = gr.Button("Run Voice Conversion")
             vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
             vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
+
+            refer_but_up.upload(
+                fn=on_reference_upload,
+                inputs=[refer_but_up],
+                outputs=[reference_file_select_vc]
+                )
+
+
 
             def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_vc,predefined_voice_id,reference_audio_filename):
                 audio_prompt_path = None
@@ -1099,7 +1107,7 @@ def create_gradio_interface():
 
 
 #####################################                            
-                voice_mode_radio,predefined_voice_select,reference_file_select = voice_change(current_config)
+            voice_mode_radio,predefined_voice_select,reference_file_select = voice_change(current_config)
 ##############################################################
 
 
