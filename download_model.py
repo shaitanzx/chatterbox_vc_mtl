@@ -34,7 +34,9 @@ CHATTERBOX_MODEL_FILES = [
     "tokenizer.json",  # Text tokenizer configuration
     "conds.pt",  # Default conditioning data (e.g., for default voice)
     "Cangjie5_TC.json",
-    "s3gen.safetensors"
+    "s3gen.safetensors",
+    "grapheme_mtl_merged_expanded_v1.json",
+    "t3_mtl23ls_v2.safetensors"
 
 
 
