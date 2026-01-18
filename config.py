@@ -215,7 +215,7 @@ class YamlConfigManager:
         path_key_map_for_conversion = {
             "server": ["log_file_path"],
             "tts_engine": ["predefined_voices_path", "reference_audio_path"],
-            "paths": ["model_cache", "output"],
+            "paths": ["model_cache", "output","ruaccent_cache"],
         }
         for section, keys_list in path_key_map_for_conversion.items():
             if section in config_data:
@@ -278,7 +278,7 @@ class YamlConfigManager:
         path_key_map_for_conversion = {
             "server": ["log_file_path"],
             "tts_engine": ["predefined_voices_path", "reference_audio_path"],
-            "paths": ["model_cache", "output"],
+            "paths": ["model_cache", "output","ruaccent_cache"],
         }
         for section, keys_list in path_key_map_for_conversion.items():
             if section in config_copy_for_saving:
