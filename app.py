@@ -605,7 +605,7 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
     return (0.7, 1.0, 7.0, 1.0, -1)
 
 # --- ОБРАБОТЧИКИ СОБЫТИЙ КНОПОК (аналог событий из script.js) ---
-def postprocess(audio_file,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate):
+def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate):
     
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
@@ -730,7 +730,7 @@ def on_generate_click(
     )
     gr.Info(message)
     if audio_file !=None:
-        file_path = postprocess(audio_file,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate)
+        file_path = postprocess(audio_file,silence_trimming,unvoiced_removal,output_format,config_audio_output_sample_rate)
     else:
         file_path = audio_file
 
@@ -1356,7 +1356,7 @@ def create_gradio_interface():
 
 
         post_btn.click(lambda: (gr.update(interactive=False),gr.update(interactive=False)),outputs=[generate_btn,post_btn]) \
-            .then(fn=postprocess,inputs=[audio_output,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate], 
+            .then(fn=postprocess,inputs=[audio_output,silence_trimming,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate], 
                     outputs=[post_output]) \
             .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
         # Кнопки управления текстом
