@@ -999,18 +999,14 @@ def create_gradio_interface():
                     vc_input_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Input Audio (to convert)")
                 #vc_target_audio = gr.Audio(sources=["upload", "microphone"], type="filepath", label="Target Voice Audio")
                 with gr.Column():
-                    voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc, refer_but_up = voice_change(current_config)
+                    voice_mode_radio_vc,predefined_voice_select_vc,reference_file_select_vc, upload_button_vc = voice_change(current_config)
             vc_pitch_shift = gr.Number(value=0, label="Pitch", step=0.5, interactive=True)
             disable_watermark_checkbox = gr.Checkbox(label="Disable Perth Watermark", value=True, visible=False)
             vc_convert_btn = gr.Button("Run Voice Conversion")
             vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
             vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
 
-            refer_but_up.upload(
-                fn=on_reference_upload,
-                inputs=[refer_but_up],
-                outputs=[reference_file_select_vc]
-                )
+            
 
 
 
@@ -1107,7 +1103,7 @@ def create_gradio_interface():
 
 
 #####################################                            
-            voice_mode_radio,predefined_voice_select,reference_file_select,_ = voice_change(current_config)
+            voice_mode_radio,predefined_voice_select,reference_file_select, upload_button_mtl = voice_change(current_config)
 ##############################################################
 
 
@@ -1355,6 +1351,16 @@ def create_gradio_interface():
             inputs=[text_area],
             outputs=[char_count]
         )
+        upload_button_vc.upload(
+            fn=on_reference_upload,
+            inputs=[upload_button_vc],
+            outputs=[reference_file_select_vc,reference_file_select]
+            )
+        upload_button_mtl.upload(
+            fn=on_reference_upload,
+            inputs=[upload_button_mtl],
+            outputs=[reference_file_select_vc,reference_file_select]
+            )
         # # Автоматическое скрытие уведомлений через 3 секунды
         # def hide_notification():
         #     time.sleep(3)
