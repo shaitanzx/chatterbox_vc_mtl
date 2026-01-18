@@ -728,7 +728,8 @@ def on_generate_click(
                 f.write(encoded_audio_bytes)
         
             generation_time = time.time() - start_time
-        
+    else:
+        file_path = audio_file
 
 
     return gr.update (value=audio_file, visible=True),gr.update (value=file_path, visible=True),gr.update (visible=True)
