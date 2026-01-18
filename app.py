@@ -452,36 +452,7 @@ def custom_tts_endpoint(
         print('aaaaaaaa engine_output_sample_rate',engine_output_sample_rate)
 #############################################################        
         # Применение аудио-обработки
-"""        
-        if silence_trimming:
-            final_audio_np = utils.trim_lead_trail_silence(
-                final_audio_np, engine_output_sample_rate
-            )
         
-        if internal_silence_fix:
-            final_audio_np = utils.fix_internal_silence(
-                final_audio_np, engine_output_sample_rate
-            )
-
-        if unvoiced_removal:
-            final_audio_np = utils.remove_long_unvoiced_segments(
-                final_audio_np, engine_output_sample_rate
-            )
-        # Применение скорости
-        if speed_factor != 1.0:
-            try:
-                import torch
-                final_audio_tensor = torch.from_numpy(final_audio_np.astype(np.float32))
-                
-                # Используем оригинальную функцию из utils
-                final_audio_tensor, _ = utils.apply_speed_factor(
-                    final_audio_tensor, 
-                    engine_output_sample_rate, 
-                    speed_factor
-                )
-                final_audio_np = final_audio_tensor.cpu().numpy()
-            except Exception as e:
-                logger.error(f"Failed to apply speed factor: {e}", exc_info=True)
 """        
         # Кодирование аудио (аналог строк 802-815 server.py)
         output_format_str = output_format if output_format else get_audio_output_format()
@@ -521,7 +492,7 @@ def custom_tts_endpoint(
         return None, f"❌ Error: {str(e)}"
     finally:
         isGenerating = False
-"""
+
 # --- ФУНКЦИИ ИЗ SCRIPT.JS (адаптированные для Gradio) ---
 
 def show_notification(message: str, type: str = "info") -> Dict[str, str]:
