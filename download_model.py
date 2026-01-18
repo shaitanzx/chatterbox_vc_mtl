@@ -33,6 +33,13 @@ CHATTERBOX_MODEL_FILES = [
     "s3gen.pt",  # S3Gen model (Token-to-Waveform)
     "tokenizer.json",  # Text tokenizer configuration
     "conds.pt",  # Default conditioning data (e.g., for default voice)
+    "Cangjie5_TC.json",
+    "s3gen.safetensors"
+
+
+
+
+
 ]
 
 
