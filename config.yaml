@@ -18,6 +18,7 @@ tts_engine:
   default_voice_clone: RU_Female_AliExpress.mp3
   auto_load_multilingual: true
 paths:
+  ruaccent_cache: "./ruaccent_cache"
   model_cache: ./model_cache
   output: outputs
 generation_defaults:

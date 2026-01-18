@@ -45,7 +45,7 @@ unidecode
 inflect
 tqdm
 hf_transfer                     # Speed up file transfers
-
+huggingface-hub>=0.20.0
 # Audio Post-processing
 pydub
 audiotsm

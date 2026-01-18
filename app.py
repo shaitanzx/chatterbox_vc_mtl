@@ -19,7 +19,17 @@ from config import (
     get_audio_output_format,
 )
 model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
+ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
+ruaccent_cache_path = Path(ruaccent_cache_path_str).resolve()
 
+# Создаем папку если не существует
+ruaccent_cache_path.mkdir(parents=True, exist_ok=True)
+
+# Устанавливаем переменные окружения
+os.environ["RUACCENT_CACHE_DIR"] = str(ruaccent_cache_path)
+os.environ["RUACCENT_MODEL_DIR"] = str(ruaccent_cache_path / "model")
+os.environ["RUACCENT_OM1N_DIR"] = str(ruaccent_cache_path / "Om1n")
+os.environ["RUACCENT_RULES_DIR"] = str(ruaccent_cache_path / "rules")
 # Устанавливаем переменные окружения ПЕРЕД любыми импортами huggingface
 # os.environ["HF_HOME"] = str(model_cache_path)
 # os.environ["HF_HUB_CACHE"] = str(model_cache_path)
@@ -69,7 +79,26 @@ logging.basicConfig(
     ],
 )
 logger = logging.getLogger(__name__)
+# Функция инициализации
+def initialize_ruaccent():
+    try:
+        accent_model = RUAccent()
+        
+        # Используем пути из переменных окружения
+        accent_model.load(
+            omograph_model_dir=str(ruaccent_cache_path / "Om1n"),
+            accent_model_dir=str(ruaccent_cache_path / "model"),
+            rules_dir=str(ruaccent_cache_path / "rules")
+        )
+        
+        logger.info(f"✅ RUAccent initialized from {ruaccent_cache_path}")
+        return accent_model
+    except Exception as e:
+        logger.error(f"❌ Failed to initialize RUAccent: {e}")
+        return None
 
+# Используем
+accent_model = initialize_ruaccent()
 # --- Global Variables ---
 current_config = {}
 currentUiState = {}

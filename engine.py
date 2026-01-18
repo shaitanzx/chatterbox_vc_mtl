@@ -20,20 +20,24 @@ from config import config_manager
 
 logger = logging.getLogger(__name__)
 
-
-
 from pathlib import Path
 import torch
 from safetensors.torch import load_file as load_safetensors
-
 from chatterbox.models.t3 import T3
 from chatterbox.models.t3.modules.t3_config import T3Config
 from chatterbox.models.s3gen import S3Gen
 from chatterbox.models.voice_encoder import VoiceEncoder
 from chatterbox.models.tokenizers import MTLTokenizer
-from chatterbox.mtl_tts import Conditionals, SUPPORTED_LANGUAGES # Need to import these too
+from chatterbox.mtl_tts import Conditionals, SUPPORTED_LANGUAGES
 from chatterbox.vc import ChatterboxVC
 
+# === ИМПОРТ ДЛЯ ЗАГРУЗКИ МОДЕЛЕЙ ===
+try:
+    from huggingface_hub import hf_hub_download, snapshot_download
+    HF_AVAILABLE = True
+except ImportError:
+    HF_AVAILABLE = False
+    logger.warning("huggingface_hub not available. Manual model download required.")
 
 class PatchedChatterboxTTS(ChatterboxMultilingualTTS):
     """
@@ -48,7 +52,6 @@ class PatchedChatterboxTTS(ChatterboxMultilingualTTS):
         # --- This is the original code from the library ---
         ve = VoiceEncoder()
         ve.load_state_dict(
-            ###########torch.load(ckpt_dir / "ve.pt", weights_only=True)
             torch.load(ckpt_dir / "ve.pt", map_location=device, weights_only=True)
         )
         ve.to(device).eval()
@@ -93,7 +96,6 @@ class PatchedChatterboxTTS(ChatterboxMultilingualTTS):
 
         s3gen = S3Gen()
         s3gen.load_state_dict(
-            ######torch.load(ckpt_dir / "s3gen.pt", weights_only=True)
             torch.load(ckpt_dir / "s3gen.pt", map_location=device, weights_only=True)
         )
         s3gen.to(device).eval()
@@ -109,14 +111,219 @@ class PatchedChatterboxTTS(ChatterboxMultilingualTTS):
         return cls(t3, s3gen, ve, tokenizer, device, conds=conds)
 
 
+# === ФУНКЦИИ ДЛЯ АВТОМАТИЧЕСКОЙ ЗАГРУЗКИ МОДЕЛЕЙ ===
+def download_tts_models() -> bool:
+    """Скачивает TTS модели в локальный кэш"""
+    if not HF_AVAILABLE:
+        logger.error("huggingface_hub not available. Cannot download TTS models.")
+        logger.error("Please install: pip install huggingface-hub")
+        return False
+    
+    logger.info("--- Starting TTS Models Download ---")
+    
+    # Получаем путь к кэшу из конфига
+    model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
+    model_cache_path = Path(model_cache_path_str).resolve()
+    
+    # Получаем ID репозитория из конфига
+    model_repo_id = config_manager.get_string("model.repo_id", "ResembleAI/chatterbox")
+    
+    logger.info(f"Target repository: {model_repo_id}")
+    logger.info(f"Local directory: {model_cache_path}")
+    
+    # Создаем папку если не существует
+    try:
+        model_cache_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Ensured directory exists: {model_cache_path}")
+    except Exception as e:
+        logger.error(f"Cannot create directory: {e}")
+        return False
+    
+    # Список файлов для загрузки (такой же как в download_model.py)
+    tts_model_files = [
+        "ve.pt",  # Voice Encoder model
+        "t3_cfg.pt",  # T3 model (Transformer Text-to-Token)
+        "s3gen.pt",  # S3Gen model (Token-to-Waveform)
+        "tokenizer.json",  # Text tokenizer configuration
+        "conds.pt",  # Default conditioning data (e.g., for default voice)
+        "Cangjie5_TC.json",
+        "s3gen.safetensors",
+        "grapheme_mtl_merged_expanded_v1.json",
+        "t3_mtl23ls_v2.safetensors"
+    ]
+    
+    success_count = 0
+    total_files = len(tts_model_files)
+    
+    for filename in tts_model_files:
+        logger.info(f"Downloading '{filename}'...")
+        try:
+            hf_hub_download(
+                repo_id=model_repo_id,
+                filename=filename,
+                local_dir=model_cache_path,
+                local_dir_use_symlinks=False,
+                force_download=False,
+                resume_download=True,
+            )
+            success_count += 1
+            logger.info(f"✓ Successfully downloaded '{filename}'")
+        except Exception as e:
+            logger.error(f"✗ Failed to download '{filename}': {e}")
+    
+    if success_count == total_files:
+        logger.info(f"✅ All {total_files} TTS files downloaded successfully!")
+        return True
+    else:
+        logger.warning(f"⚠️ Downloaded {success_count}/{total_files} files")
+        # Если скачано больше половины файлов, считаем успехом
+        return success_count > total_files // 2
+
+def download_ruaccent_models() -> bool:
+    """Скачивает ruaccent модели в отдельную папку"""
+    if not HF_AVAILABLE:
+        logger.error("huggingface_hub not available. Cannot download ruaccent models.")
+        logger.error("Please install: pip install huggingface-hub")
+        return False
+    
+    logger.info("--- Starting RuAccent Models Download ---")
+    
+    # Получаем путь к кэшу ruaccent из конфига
+    ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
+    ruaccent_cache_path = Path(ruaccent_cache_path_str).resolve()
+    
+    logger.info(f"RuAccent cache directory: {ruaccent_cache_path}")
+    
+    # Создаем папку если не существует
+    try:
+        ruaccent_cache_path.mkdir(parents=True, exist_ok=True)
+        logger.info(f"Ensured ruaccent directory exists: {ruaccent_cache_path}")
+    except Exception as e:
+        logger.error(f"Cannot create ruaccent directory: {e}")
+        return False
+    
+    # Репозитории ruaccent моделей
+    ruaccent_repos = {
+        "Om1n": "ai-forever/ruaccent-om1n",
+        "model": "ai-forever/ruaccent-model",
+        "rules": "ai-forever/ruaccent-rules",
+    }
+    
+    success_count = 0
+    total_repos = len(ruaccent_repos)
+    
+    for model_name, repo_id in ruaccent_repos.items():
+        logger.info(f"Downloading {model_name} from {repo_id}...")
+        try:
+            # Скачиваем всю модель (snapshot)
+            snapshot_download(
+                repo_id=repo_id,
+                local_dir=ruaccent_cache_path / model_name,
+                local_dir_use_symlinks=False,
+                resume_download=True,
+                force_download=False,
+            )
+            success_count += 1
+            logger.info(f"✓ Successfully downloaded {model_name}")
+        except Exception as e:
+            logger.error(f"✗ Failed to download {model_name}: {e}")
+    
+    if success_count == total_repos:
+        logger.info(f"✅ All {total_repos} ruaccent models downloaded successfully!")
+        return True
+    else:
+        logger.warning(f"⚠️ Downloaded {success_count}/{total_repos} ruaccent models")
+        return False
+
+def check_and_download_all_models() -> bool:
+    """Проверяет и скачивает все необходимые модели (TTS и ruaccent)"""
+    logger.info("🔍 Checking for missing models...")
+    
+    # 1. Проверяем TTS модели
+    model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
+    model_cache_path = Path(model_cache_path_str).resolve()
+    
+    tts_required_files = [
+        "ve.pt",
+        "t3_cfg.pt",
+        "s3gen.pt",
+        "tokenizer.json",
+        "conds.pt",
+        "Cangjie5_TC.json",
+        "s3gen.safetensors",
+        "grapheme_mtl_merged_expanded_v1.json",
+        "t3_mtl23ls_v2.safetensors"
+    ]
+    
+    missing_tts = []
+    for file in tts_required_files:
+        file_path = model_cache_path / file
+        if not file_path.exists():
+            missing_tts.append(file)
+    
+    # 2. Проверяем ruaccent модели
+    ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
+    ruaccent_cache_path = Path(ruaccent_cache_path_str).resolve()
+    
+    ruaccent_required_dirs = ["Om1n", "model", "rules"]
+    missing_ruaccent = []
+    for dir_name in ruaccent_required_dirs:
+        dir_path = ruaccent_cache_path / dir_name
+        if not dir_path.exists():
+            missing_ruaccent.append(dir_name)
+    
+    # 3. Логируем что отсутствует
+    if missing_tts:
+        logger.warning(f"Missing {len(missing_tts)} TTS files: {', '.join(missing_tts[:3])}{'...' if len(missing_tts) > 3 else ''}")
+    
+    if missing_ruaccent:
+        logger.warning(f"Missing {len(missing_ruaccent)} ruaccent directories: {', '.join(missing_ruaccent)}")
+    
+    # 4. Если ничего не отсутствует - возвращаем успех
+    if not missing_tts and not missing_ruaccent:
+        logger.info("✅ All models are present.")
+        return True
+    
+    # 5. Скачиваем если что-то отсутствует
+    logger.info("🔄 Some models are missing. Starting automatic download...")
+    
+    if not HF_AVAILABLE:
+        logger.error("❌ huggingface_hub not installed. Please install: pip install huggingface-hub")
+        logger.error("Or download models manually.")
+        return False
+    
+    all_success = True
+    
+    # Скачиваем TTS модели если нужно
+    if missing_tts:
+        logger.info("📥 Downloading TTS models...")
+        tts_success = download_tts_models()
+        if not tts_success:
+            logger.error("❌ TTS models download failed")
+            all_success = False
+    
+    # Скачиваем ruaccent модели если нужно
+    if missing_ruaccent:
+        logger.info("📥 Downloading ruaccent models...")
+        ruaccent_success = download_ruaccent_models()
+        if not ruaccent_success:
+            logger.warning("⚠️ RuAccent models download failed (accentuation may not work)")
+            # Не считаем это фатальной ошибкой, так как ruaccent не критичен
+    
+    if all_success:
+        logger.info("✅ All required models downloaded successfully!")
+    else:
+        logger.warning("⚠️ Some models may not be fully downloaded")
+    
+    return all_success
+
+
 # --- Global Module Variables ---
 multilingual_model: Optional[PatchedChatterboxTTS] = None
 MULTILINGUAL_MODEL_LOADED: bool = False
 chatterbox_model: Optional[ChatterboxTTS] = None
 MODEL_LOADED: bool = False
-model_device: Optional[str] = (
-    None  # Stores the resolved device string ('cuda' or 'cpu')
-)
+model_device: Optional[str] = None
 vc_model: Optional[ChatterboxVC] = None
 VC_MODEL_LOADED: bool = False
 
@@ -189,7 +396,13 @@ def load_model() -> bool:
         return True
 
     try:
-        # === СНАЧАЛА ОПРЕДЕЛЯЕМ УСТРОЙСТВО ===
+        # === ШАГ 1: ПРОВЕРЯЕМ И СКАЧИВАЕМ МОДЕЛИ (ЕСЛИ НУЖНО) ===
+        logger.info("🔄 Checking and downloading models (if needed)...")
+        if not check_and_download_all_models():
+            logger.error("❌ Model download/check failed. Please check internet connection.")
+            return False
+        
+        # === ШАГ 2: ОПРЕДЕЛЯЕМ УСТРОЙСТВО ===
         device_setting = config_manager.get_string("tts_engine.device", "auto")
         if device_setting == "auto":
             if _test_cuda_functionality():
@@ -244,72 +457,11 @@ def load_model() -> bool:
         model_device = resolved_device_str
         logger.info(f"Final device selection: {model_device}")
 
-        # === ТЕПЕРЬ ПРОВЕРЯЕМ И СКАЧИВАЕМ МОДЕЛИ ===
+        # === ШАГ 3: ЗАГРУЖАЕМ TTS МОДЕЛЬ ИЗ ЛОКАЛЬНОГО КЭША ===
         model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
         model_cache_path = Path(model_cache_path_str).resolve()
         
-        # Создаем папку если не существует
-        model_cache_path.mkdir(parents=True, exist_ok=True)
-        
-        # ОБНОВЛЕННЫЙ СПИСОК ФАЙЛОВ - используем тот же что в download_model.py
-        required_files = [
-            "ve.pt",  # Voice Encoder model
-            "t3_cfg.pt",  # T3 model (Transformer Text-to-Token)
-            "s3gen.pt",  # S3Gen model (Token-to-Waveform)
-            "tokenizer.json",  # Text tokenizer configuration
-            "conds.pt",  # Default conditioning data (e.g., for default voice)
-            "Cangjie5_TC.json",
-            "s3gen.safetensors",
-            "grapheme_mtl_merged_expanded_v1.json",
-            "t3_mtl23ls_v2.safetensors"
-        ]
-        
-        missing_files = []
-        for file in required_files:
-            file_path = model_cache_path / file
-            if not file_path.exists():
-                missing_files.append(file)
-        
-        if missing_files:
-            logger.warning(f"Missing {len(missing_files)} model files: {missing_files}")
-            logger.info("🔄 Starting automatic download of missing models...")
-            
-            try:
-                # Импортируем модуль download_model
-                import sys
-                import importlib.util
-                
-                # Путь к скрипту download_model.py (предполагаем что он в той же директории)
-                download_script_path = Path(__file__).parent / "download_model.py"
-                
-                if download_script_path.exists():
-                    # Динамически импортируем модуль
-                    spec = importlib.util.spec_from_file_location("download_model", download_script_path)
-                    download_module = importlib.util.module_from_spec(spec)
-                    
-                    # Запускаем модуль
-                    spec.loader.exec_module(download_module)
-                    
-                    # Вызываем функцию загрузки
-                    success = download_module.download_engine_files()
-                    
-                    if success:
-                        logger.info("✅ All models downloaded successfully!")
-                    else:
-                        logger.error("❌ Failed to download models. Please check internet connection and try again.")
-                        return False
-                else:
-                    logger.error(f"❌ Download script not found at: {download_script_path}")
-                    logger.error("Please create download_model.py or download models manually.")
-                    return False
-                    
-            except Exception as e:
-                logger.error(f"❌ Error during automatic model download: {e}", exc_info=True)
-                logger.error("Please run download_model.py manually or check your internet connection.")
-                return False
-        
-        # === ЗАГРУЖАЕМ МОДЕЛИ ИЗ ЛОКАЛЬНОГО КЭША ===
-        logger.info(f"📁 Loading model from local cache: {model_cache_path}")
+        logger.info(f"📁 Loading TTS model from local cache: {model_cache_path}")
         
         # Загружаем основную TTS модель
         multilingual_model = PatchedChatterboxTTS.from_local(
@@ -324,7 +476,16 @@ def load_model() -> bool:
         logger.info(f"✅ PatchedChatterboxTTS model loaded successfully from local cache on {model_device}.")
         logger.info("Multilingual model is now the default for ALL languages.")
         
-        # === ПРОБУЕМ ЗАГРУЗИТЬ VC МОДЕЛЬ ===
+        # === ШАГ 4: ПРОВЕРЯЕМ НАЛИЧИЕ RUACCENT МОДЕЛЕЙ ===
+        ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
+        ruaccent_cache_path = Path(ruaccent_cache_path_str).resolve()
+        
+        if all((ruaccent_cache_path / dir_name).exists() for dir_name in ["Om1n", "model", "rules"]):
+            logger.info("✅ RuAccent models are available in cache")
+        else:
+            logger.warning("⚠️ RuAccent models not fully available. Accentuation may not work.")
+        
+        # === ШАГ 5: ПРОБУЕМ ЗАГРУЗИТЬ VC МОДЕЛЬ ===
         try:
             logger.info(f"Attempting to load Voice Conversion model from local cache...")
             
@@ -392,7 +553,7 @@ def load_multilingual_model() -> bool:
         logger.info("Standard model unloaded and memory cleared.")
 
     try:
-        # Get model cache path from config
+        # Получаем путь к кэшу моделей
         model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
         model_cache_path = Path(model_cache_path_str).resolve()
         
@@ -436,13 +597,13 @@ def load_vc_model() -> bool:
         return False
     
     try:
-        # Get model cache path from config
+        # Получаем путь к кэшу моделей
         model_cache_path_str = config_manager.get_string("paths.model_cache", "./model_cache")
         model_cache_path = Path(model_cache_path_str).resolve()
         
         logger.info(f"Loading Voice Conversion model from local cache: {model_cache_path} on {model_device}...")
         
-        # Load VC model from local cache
+        # Загружаем VC модель из локального кэша
         vc_model = ChatterboxVC.from_local(
             ckpt_dir=model_cache_path,
             device=model_device
@@ -549,3 +710,34 @@ def get_supported_languages() -> list:
             return list(getattr(langs, "keys")())
         except Exception:
             return ["en"]
+
+
+# Функция для ручного запуска загрузки моделей (опционально)
+def download_models_manually() -> bool:
+    """
+    Manual function to download all models.
+    Can be called separately if needed.
+    """
+    logger.info("🚀 Manual model download started...")
+    return check_and_download_all_models()
+
+
+# Если файл запускается напрямую - скачиваем модели
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+    )
+    
+    print("=" * 60)
+    print("🧠 Chatterbox TTS Model Downloader")
+    print("=" * 60)
+    
+    if download_models_manually():
+        print("\n✅ All models downloaded successfully!")
+        print("You can now run the main application.")
+    else:
+        print("\n❌ Model download failed.")
+        print("Please check your internet connection and try again.")
+        exit(1)
