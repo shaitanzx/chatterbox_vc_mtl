@@ -1179,7 +1179,7 @@ def create_gradio_interface():
                                         label="Audio Output Format",
                                         interactive=True
                                         )
-                                    
+                with gr.Row():                    
                         with gr.Accordion("⚙️ Postprocessing Parameters", open=True):
                             with gr.Row():
                                 speed_factor_slider = gr.Slider(
@@ -1250,7 +1250,7 @@ def create_gradio_interface():
                             show_download_button=True
                         )
                 with gr.Row():
-                    post_btn = gr.Button("🎵 PostProcessing")
+                    post_btn = gr.Button("🎵 PostProcessing",visible=False)
                 
               
 
