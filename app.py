@@ -17,6 +17,7 @@ from config import (
     get_audio_sample_rate,
     get_full_config_for_template,
     get_audio_output_format,
+    get_ruaccent_cache_path,
 )
 model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
 ruaccent_cache_path_str = config_manager.get_string("paths.ruaccent_cache", "./ruaccent_cache")
