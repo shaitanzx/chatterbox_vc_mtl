@@ -727,7 +727,6 @@ def on_generate_click(
         with open(file_path, "wb") as f:
             f.write(encoded_audio_bytes)
         
-        generation_time = time.time() - start_time
     else:
         file_path = audio_file
 
