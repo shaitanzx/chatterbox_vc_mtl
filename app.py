@@ -664,6 +664,7 @@ def on_generate_click(
         #unvoiced_removal=unvoiced_removal
     )
     gr.Info(message)
+    print ('ssssssssssssssssssssssssssss',audio_file)
     if audio_file !=None:
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
