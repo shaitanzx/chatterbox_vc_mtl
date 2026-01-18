@@ -227,67 +227,67 @@ def get_ui_initial_data() -> Dict[str, Any]:
         return {"error": "Failed to load initial data"}
 
 
-def save_settings_endpoint(config_tts_engine_device, reference_audio_path, predefined_voices_path, default_voice_id, default_voice_clone,
-                config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
-                speed_factor_slider, language, config_audio_output_format,config_audio_output_sample_rate):
-    """Original from server.py - save settings"""
-    logger.info("Saving settings")
-    try:
-        settings_data = {
-            "tts_engine": {
-                "device": config_tts_engine_device,
-                "reference_audio_path": reference_audio_path,
-                "predefined_voices_path": predefined_voices_path,
-                "default_voice_id": default_voice_id,
-                "default_voice_clone": default_voice_clone
-            },
-            "paths": {
-                "model_cache": config_paths_model_cache,
-                "output": config_paths_output
-            },
-            "generation_defaults": {
-                "temperature": temperature_slider,
-                "exaggeration": exaggeration_slider,
-                "cfg_weight": cfg_weight_slider,
-                "seed": seed_input,
-                "speed_factor": speed_factor_slider,
-                "language": extract_language_code(language)
-            },
-            "audio_output": {
-                "format": config_audio_output_format,
-                "sample_rate": config_audio_output_sample_rate
-            }
-        }
+# def save_settings_endpoint(config_tts_engine_device, reference_audio_path, predefined_voices_path, default_voice_id, default_voice_clone,
+#                 config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
+#                 speed_factor_slider, language, config_audio_output_format,config_audio_output_sample_rate):
+#     """Original from server.py - save settings"""
+#     logger.info("Saving settings")
+#     try:
+#         settings_data = {
+#             "tts_engine": {
+#                 "device": config_tts_engine_device,
+#                 "reference_audio_path": reference_audio_path,
+#                 "predefined_voices_path": predefined_voices_path,
+#                 "default_voice_id": default_voice_id,
+#                 "default_voice_clone": default_voice_clone
+#             },
+#             "paths": {
+#                 "model_cache": config_paths_model_cache,
+#                 "output": config_paths_output
+#             },
+#             "generation_defaults": {
+#                 "temperature": temperature_slider,
+#                 "exaggeration": exaggeration_slider,
+#                 "cfg_weight": cfg_weight_slider,
+#                 "seed": seed_input,
+#                 "speed_factor": speed_factor_slider,
+#                 "language": extract_language_code(language)
+#             },
+#             "audio_output": {
+#                 "format": config_audio_output_format,
+#                 "sample_rate": config_audio_output_sample_rate
+#             }
+#         }
 
-        if config_manager.update_and_save(settings_data):
-            restart_needed = any(
-                key in settings_data
-                for key in ["server", "tts_engine", "paths", "model"]
-            )
-            gr.Info("Settings saved successfully.")
-            if restart_needed:
-                gr.Info("A server restart may be required.")
-            return
-        else:
-            return 
-    except Exception as e:
-        logger.error(f"Error saving settings: {e}", exc_info=True)
-        return 
+#         if config_manager.update_and_save(settings_data):
+#             restart_needed = any(
+#                 key in settings_data
+#                 for key in ["server", "tts_engine", "paths", "model"]
+#             )
+#             gr.Info("Settings saved successfully.")
+#             if restart_needed:
+#                 gr.Info("A server restart may be required.")
+#             return
+#         else:
+#             return 
+#     except Exception as e:
+#         logger.error(f"Error saving settings: {e}", exc_info=True)
+#         return 
 
-async def reset_settings_endpoint() -> Dict[str, Any]:
-    """Original from server.py - reset settings"""
-    logger.warning("Resetting all configurations to default values")
-    try:
-        if config_manager.reset_and_save():
-            return {
-                "message": "Configuration reset to defaults. Please reload.",
-                "restart_needed": True
-            }
-        else:
-            return {"error": "Failed to reset configuration"}
-    except Exception as e:
-        logger.error(f"Error resetting settings: {e}", exc_info=True)
-        return {"error": f"Internal error: {str(e)}"}
+# async def reset_settings_endpoint() -> Dict[str, Any]:
+#     """Original from server.py - reset settings"""
+#     logger.warning("Resetting all configurations to default values")
+#     try:
+#         if config_manager.reset_and_save():
+#             return {
+#                 "message": "Configuration reset to defaults. Please reload.",
+#                 "restart_needed": True
+#             }
+#         else:
+#             return {"error": "Failed to reset configuration"}
+#     except Exception as e:
+#         logger.error(f"Error resetting settings: {e}", exc_info=True)
+#         return {"error": f"Internal error: {str(e)}"}
 
 async def get_reference_files_api() -> List[str]:
     """Original from server.py - get reference files"""
@@ -1184,6 +1184,7 @@ def create_gradio_interface():
                                         precision=0,
                                         interactive=True
                                         )
+                                    temp_slider = gr.Slider(label="Speed Factor",visible=False)
                 with gr.Row():                    
                         with gr.Accordion("⚙️ Postprocessing Parameters", open=True):
                             with gr.Row():
