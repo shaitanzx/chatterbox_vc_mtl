@@ -1354,7 +1354,8 @@ def create_gradio_interface():
             ],outputs=[audio_output,post_output,post_btn]) \
             .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
         post_btn.click(lambda: (gr.update(interactive=False),gr.update(interactive=False)),outputs=[generate_btn,post_btn]) \
-            .then(postprocess,input=[audio_output,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate], output=[audio_output,post_output,post_btn]) \
+            .then(postprocess,input=[audio_output,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate], 
+                    output=[post_output]) \
             .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
         # Кнопки управления текстом
 
