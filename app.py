@@ -1247,7 +1247,7 @@ def create_gradio_interface():
                         )
                 with gr.Row():
                     post_output = gr.Audio(
-                            label="Generated Audio",
+                            label="Postprocessed Audio",
                             type="filepath",
                             interactive=False,
                             visible=False,
