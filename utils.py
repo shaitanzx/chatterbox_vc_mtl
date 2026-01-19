@@ -609,7 +609,7 @@ def apply_speed_factor_sox_external(
         out_path = f_out.name
 
     try:
-        # Saev input WAV
+        # Save input WAV
         torchaudio.save(in_path, audio_tensor.unsqueeze(0).cpu(), sample_rate)
 
         # Call sox: tempo -s speed_factor
@@ -852,7 +852,7 @@ def remove_long_unvoiced_segments(
             audio_array.astype(np.float64), sampling_frequency=sample_rate
         )
         pitch = sound.to_pitch(pitch_floor=pitch_floor, pitch_ceiling=pitch_ceiling)
-        # ИЗМЕНЕНИЕ: Получаем значения питча вместо get_VoicedVoicelessUnvoiced()
+
         pitch_values = pitch.selected_array['frequency']
         
         # ИЗМЕНЕНИЕ: Определяем вокализованные фреймы (pitch > 0 = voiced)

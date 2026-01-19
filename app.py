@@ -775,10 +775,6 @@ def create_gradio_interface():
             vc_output_files = gr.Files(label="Converted VC Audio File(s)",visible=False)
             vc_output_audio = gr.Audio(label="VC Output Preview", interactive=True,visible=False,show_download_button=True)
 
-            
-
-
-
             def _vc_wrapper(input_audio_path, disable_watermark, pitch_shift,voice_mode_vc,predefined_voice_id,reference_audio_filename):
                 audio_prompt_path = None
                 if voice_mode_vc == "predefined":
@@ -799,7 +795,6 @@ def create_gradio_interface():
                     disable_watermark=disable_watermark,
                     pitch_shift=pitch_shift
                     )
-#                os.makedirs("outputs", exist_ok=True)
                 base = os.path.splitext(os.path.basename(input_audio_path))[0]
                 timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S_%f")[:-3]
                 out_path = f"outputs/{base}_vc_{timestamp}.wav"
@@ -855,7 +850,6 @@ def create_gradio_interface():
                 )
             with gr.Group():
                 with gr.Row():                
-                # Настройки разделения текста (аналог Split text into chunks)
                     split_text_toggle = gr.Checkbox(
                         label="Split text into chunks",
                         value=True
@@ -869,16 +863,10 @@ def create_gradio_interface():
                         label="Chunk Size",
                         visible=True
                         )
-
-
-#####################################                            
+                        
             voice_mode_radio,predefined_voice_select,reference_file_select, upload_button_mtl = voice_change(current_config)
-##############################################################
-
-
 
             with gr.Row():
-                # Настройки генерации (аналог Generation Parameters из index.html)
                 with gr.Accordion("🎛 Generation Parameters", open=True):
                     with gr.Row():
                         with gr.Column():
@@ -973,17 +961,13 @@ def create_gradio_interface():
                                 )
 
             with gr.Row():                
-            # Имя аудиофайла
                 with gr.Accordion("📁 Audio File Name", open=False):
                     audio_name_input = gr.Textbox(
                         label="Custom Audio Name",
                         placeholder="Enter custom name (without extension)",
                         value=""
                         )
-        
-        # Секция с результатами
             with gr.Row():
-                # Аудиоплеер
                 audio_output = gr.Audio(
                     label="Generated Audio",
                     type="filepath",
@@ -1001,11 +985,6 @@ def create_gradio_interface():
                     )
             with gr.Row():
                 post_btn = gr.Button("🎵 PostProcessing",visible=False)
-                
-              
-
-        
-        # Секция с информацией
             with gr.Accordion("💡 Tips & Tricks", open=False):
                 gr.Markdown("""
                 - For **Audiobooks**, use **MP3** format, enable **Split text**, and set a chunk size of ~250-500.
@@ -1014,71 +993,6 @@ def create_gradio_interface():
                 - Experiment with **Temperature** and other generation parameters to fine-tune output.
                 """)
 
-        # with gr.Tab("⚙️ Server Configuration"):
-
-        #         gr.Markdown("""
-        #         These settings are loaded from `config.yaml` via an API call.
-        #         **Restart the server** to apply changes to Host, Port, Model, or Path settings if modified.
-        #         """)
-        #         with gr.Row():
-        #             with gr.Column():
-            
-        #                 config_paths_model_cache = gr.Textbox(
-        #                     label="Model Cache Path",
-        #                     value=current_config.get("paths", {}).get("model_cache", "./model_cache"),
-        #                     interactive=False
-        #                     )      
-
-
-        #                 config_tts_engine_reference_audio_path = gr.Textbox(
-        #                     label="Reference Audio Path",
-        #                     value=current_config.get("tts_engine", {}).get("reference_audio_path", "./reference_audio"),
-        #                     interactive=True
-        #                     )
-        #                 config_tts_engine_predefined_voices_path = gr.Textbox(
-        #                     label="Predefined Voices Path",
-        #                     value=current_config.get("tts_engine", {}).get("predefined_voices_path", "./voices"),
-        #                     interactive=True
-        #                     )
-        #                 config_paths_output = gr.Textbox(
-        #                     label="Output Path",
-        #                     value=current_config.get("paths", {}).get("output", "./outputs"),
-        #                     interactive=True
-        #                     )
-        #             with gr.Column():  
-        #                 config_tts_engine_device = gr.Textbox(
-        #                     label="TTS Device",
-        #                     value=current_config.get("tts_engine", {}).get("device", "cpu"),
-        #                     interactive=False
-        #                     )                   
-        #                 config_tts_engine_default_voice_id = gr.Textbox(
-        #                     label="Predefined Voice",
-        #                     value=current_config.get("tts_engine", {}).get("default_voice_id", ""),
-        #                     interactive=True
-        #                     )
-        #                 config_tts_engine_default_voice_clone = gr.Textbox(
-        #                     label="Clone Voice",
-        #                     value=current_config.get("tts_engine", {}).get("default_voice_clone", ""),
-        #                     interactive=True
-        #                     )
-               
-            
-        #     # Кнопки управления конфигурацией
-        #         with gr.Row():
-        #             save_config_btn = gr.Button("💾 Save Server Configuration", variant="primary")
-
-        # # --- ПРИВЯЗКА ОБРАБОТЧИКОВ СОБЫТИЙ ---
-
-        # save_config_btn.click(
-        #     fn=save_settings_endpoint,
-        #     inputs=[config_tts_engine_device, config_tts_engine_reference_audio_path, config_tts_engine_predefined_voices_path, 
-        #         config_tts_engine_default_voice_id, config_tts_engine_default_voice_clone,
-        #         config_paths_model_cache,config_paths_output,temperature_slider, exaggeration_slider,cfg_weight_slider, seed_input,
-        #         speed_factor_slider, language_select, config_audio_output_format,config_audio_output_sample_rate]
-        # )
-        
-
-        # Основная кнопка Generate
         generate_btn.click(lambda: (gr.update(interactive=False),gr.update(interactive=False)),outputs=[generate_btn,post_btn]) \
             .then(fn=on_generate_click,inputs=[
                 text_area,
@@ -1107,14 +1021,13 @@ def create_gradio_interface():
             .then(fn=postprocess,inputs=[audio_output,silence_trimming,internal_silence_fix,unvoiced_removal,config_audio_output_format,config_audio_output_sample_rate,speed_factor_slider,audio_name_input], 
                     outputs=[post_output]) \
             .then (lambda: (gr.update(interactive=True),gr.update(interactive=True)),outputs=[generate_btn,post_btn])
-        # Кнопки управления текстом
 
         accent_btn.click(
             fn=on_accent_click,
             inputs=[text_area],
             outputs=[text_area]
         )
-        # Обновление счетчика символов
+
         text_area.change(
             fn=on_text_input,
             inputs=[text_area],
@@ -1130,28 +1043,13 @@ def create_gradio_interface():
             inputs=[upload_button_mtl],
             outputs=[reference_file_select,reference_file_select_vc]
             )
-        # # Автоматическое скрытие уведомлений через 3 секунды
-        # def hide_notification():
-        #     time.sleep(3)
-        #     return gr.update(visible=False)
-        
-        # # Добавляем скрытие уведомлений
-        # notification_display.change(
-        #     fn=lambda: gr.update(visible=True),
-        #     outputs=[notification_display]
-        # ).then(
-        #     fn=hide_notification,
-        #     outputs=[notification_display]
-        # )
+
     
     return demo
 
-# --- ЗАПУСК СЕРВЕРА ---
 
 def main():
-    """Запуск Gradio сервера"""
-    
-    # Загрузка TTS модели
+
     logger.info("Initializing TTS Server...")
     
     if not engine.load_model():
@@ -1159,18 +1057,9 @@ def main():
         return
     
     logger.info("TTS Model loaded successfully via engine.")
-    
-    # Создание интерфейса
+
     demo = create_gradio_interface()
     
-    # Конфигурация запуска
-    # server_host = get_host()
-    # server_port = get_port()
-    
-
-    #logger.info(f"Web UI available at http://{server_host}:{server_port}")
-    
-    # Запуск Gradio
     demo.launch(share=True)
 
 if __name__ == "__main__":
