@@ -168,8 +168,9 @@ def on_accent_click(text: str):
         return text
 
 def get_ui_initial_data() -> Dict[str, Any]:
-     """get initial UI data"""
+
     logger.info("Request for initial UI data")
+
     try:
         full_config = get_full_config_for_template()
         reference_files = utils.get_valid_reference_files()
