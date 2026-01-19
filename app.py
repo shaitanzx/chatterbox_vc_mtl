@@ -431,9 +431,8 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
 def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate,speed_factor,audio_name):
         speed_factor = float (speed_factor)
         config_audio_output_sample_rate = int (config_audio_output_sample_rate)
-        #audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
-        audio_data = audio_file
-        engine_output_sample_rate = config_audio_output_sample_rate
+        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', audio_file)
+        audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
             audio_data = utils.trim_lead_trail_silence(
                 audio_data, engine_output_sample_rate
