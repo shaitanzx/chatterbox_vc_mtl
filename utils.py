@@ -855,10 +855,8 @@ def remove_long_unvoiced_segments(
 
         pitch_values = pitch.selected_array['frequency']
         
-        # ИЗМЕНЕНИЕ: Определяем вокализованные фреймы (pitch > 0 = voiced)
         voiced_frames = pitch_values > 0
         
-        # ИЗМЕНЕНИЕ: Получаем временные метки для фреймов
         time_step = pitch.get_time_step()
         start_time = pitch.get_start_time()
         frame_times = [start_time + i * time_step for i in range(len(pitch_values))]
@@ -867,56 +865,50 @@ def remove_long_unvoiced_segments(
         current_segment_start_sample = 0
         min_unvoiced_samples = int((min_unvoiced_duration_ms / 1000.0) * sample_rate)
 
-        # ИЗМЕНЕНИЕ: Обрабатываем фреймы вместо интервалов
         i = 0
         while i < len(voiced_frames):
-            # Находим начало сегмента
+
             is_voiced_current = voiced_frames[i]
             
-            # Находим конец текущего сегмента (где меняется состояние)
             j = i
             while j < len(voiced_frames) and voiced_frames[j] == is_voiced_current:
                 j += 1
             
-            # Определяем временные границы сегмента
             segment_start_time = frame_times[i]
             segment_end_time = frame_times[j-1] + time_step if j < len(frame_times) else frame_times[-1] + time_step
             
-            # Конвертируем время в сэмплы
             segment_start_sample = int(segment_start_time * sample_rate)
             segment_end_sample = int(segment_end_time * sample_rate)
             segment_duration_samples = segment_end_sample - segment_start_sample
             
-            # Ограничиваем границы размерами массива
             segment_start_sample = min(max(segment_start_sample, 0), len(audio_array))
             segment_end_sample = min(max(segment_end_sample, 0), len(audio_array))
             
-            if is_voiced_current:  # Вокализованный сегмент
-                # Добавляем весь сегмент
+            if is_voiced_current:
+
                 if segment_start_sample < segment_end_sample:
                     segments_to_keep.append(audio_array[segment_start_sample:segment_end_sample])
                 current_segment_start_sample = segment_end_sample
-            else:  # Невокализованный сегмент
+            else:  
                 if segment_duration_samples < min_unvoiced_samples:
-                    # Короткий невокализованный сегмент - сохраняем
+                   
                     if segment_start_sample < segment_end_sample:
                         segments_to_keep.append(audio_array[segment_start_sample:segment_end_sample])
                     current_segment_start_sample = segment_end_sample
                 else:
-                    # Длинный невокализованный сегмент - удаляем
+                    
                     logger.debug(
                         f"Removing long unvoiced segment from {segment_start_time:.2f}s to {segment_end_time:.2f}s."
                     )
-                    # Добавляем только часть перед этим сегментом
+                    
                     if segment_start_sample > current_segment_start_sample:
                         segments_to_keep.append(
                             audio_array[current_segment_start_sample:segment_start_sample]
                         )
                     current_segment_start_sample = segment_end_sample
             
-            i = j  # Переходим к следующему сегменту
+            i = j  
 
-        # ИЗМЕНЕНИЕ: Добавляем оставшуюся часть аудио
         if current_segment_start_sample < len(audio_array):
             segments_to_keep.append(audio_array[current_segment_start_sample:])
 
