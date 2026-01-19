@@ -431,7 +431,6 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
 def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate,speed_factor,audio_name):
         speed_factor = float (speed_factor)
         config_audio_output_sample_rate = int (config_audio_output_sample_rate)
-        print('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', audio_file)
         audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
             audio_data = utils.trim_lead_trail_silence(
@@ -763,6 +762,7 @@ def create_gradio_interface():
             js="() => {const params = new URLSearchParams(window.location.search);if (!params.has('__theme')) {params.set('__theme', 'dark');window.location.search = params.toString();}}"
         )    
         gr.Markdown(f"# 🎤 {get_ui_title()}")
+        gr.HTML('* Repack by Shahmatist^RMDA. Based on repacks by LeeAeron and <a href="https://github.com/petermg/Chatterbox-TTS-Extended" target="_blank">petermg</a>')
     # === VC TAB: Voice Conversion Tab ===
         with gr.Tab("🎤 Voice Conversion (VC)"):
             gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target voice audio.")
