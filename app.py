@@ -762,7 +762,7 @@ def create_gradio_interface():
             js="() => {const params = new URLSearchParams(window.location.search);if (!params.has('__theme')) {params.set('__theme', 'dark');window.location.search = params.toString();}}"
         )    
         gr.Markdown(f"# 🎤 {get_ui_title()}")
-        gr.HTML('* Repack by Shahmatist^RMDA. Based on repacks by LeeAeron and <a href="https://github.com/petermg/Chatterbox-TTS-Extended" target="_blank">\U000F4D41 petermg</a>')
+        gr.HTML('* Repack by Shahmatist^RMDA. Based on repacks by <a href="https://huggingface.co/datasets/LeeAeron/Chatterbox-TTS-Server-Multilingual" target="_blank">LeeAeron\U000F4D41 petermg</a>, <a href="https://github.com/petermg/Chatterbox-TTS-Extended" target="_blank">\U000F4D41 petermg</a> and <a href="https://github.com/resemble-ai/chatterbox" target="_blank">\U000F4D41 resemble-ai</a>')
     # === VC TAB: Voice Conversion Tab ===
         with gr.Tab("🎤 Voice Conversion (VC)"):
             gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target voice audio.")
