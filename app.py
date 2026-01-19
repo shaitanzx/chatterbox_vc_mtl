@@ -977,7 +977,7 @@ def create_gradio_interface():
                 #    visible=False,
                 #    show_download_button=True
                 #    )
-                audio_output = gr.Audio(label="Generated Audio", interactive=True,visible=False,show_download_button=True)
+                audio_output = gr.Audio(label="Generated Audio", interactive=True,visible=False,show_download_button=True,type="filepath")
                     
             with gr.Row():
                 post_output = gr.Audio(
