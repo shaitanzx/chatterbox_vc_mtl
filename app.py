@@ -762,7 +762,9 @@ def create_gradio_interface():
             js="() => {const params = new URLSearchParams(window.location.search);if (!params.has('__theme')) {params.set('__theme', 'dark');window.location.search = params.toString();}}"
         )    
         gr.Markdown(f"# 🎤 {get_ui_title()}")
-        gr.HTML('* Repack by Shahmatist^RMDA. Based on repacks by <a href="https://huggingface.co/datasets/LeeAeron/Chatterbox-TTS-Server-Multilingual" target="_blank">LeeAeron\U000F4D41 petermg</a>, <a href="https://github.com/petermg/Chatterbox-TTS-Extended" target="_blank">\U000F4D41 petermg</a> and <a href="https://github.com/resemble-ai/chatterbox" target="_blank">\U000F4D41 resemble-ai</a>')
+        gr.HTML('* Repack by Shahmatist^RMDA. Based on repacks by <a href="https://huggingface.co/datasets/LeeAeron/Chatterbox-TTS-Server-Multilingual" target="_blank">LeeAeron</a>, <a href="https://github.com/petermg/Chatterbox-TTS-Extended" target="_blank"> petermg</a> and <a href="https://github.com/resemble-ai/chatterbox" target="_blank">resemble-ai</a>')
+        gr.HTML('* All suggestions and questions can be voiced in the <a href="https://t.me/+xlhhGmrz9SlmYzg6" target="_blank">Telegram-groupn</a>')
+        gr.HTML('* Disclaimer: All voice examples are taken from open sources and are presented with respect to their users and for demonstration purposes only. For commercial use, we recommend contacting the authors. Unauthorized use of other people\'s voices for commercial purposes and without permission not only violates the rights of their owners but may also be prosecuted. We strictly prohibit, condemn, and assume no liability for the use of this technology to violate anyone\'s rights or commit illegal acts!')
     # === VC TAB: Voice Conversion Tab ===
         with gr.Tab("🎤 Voice Conversion (VC)"):
             gr.Markdown("## Voice Conversion\nConvert one speaker's voice to sound like another speaker using a target voice audio.")
