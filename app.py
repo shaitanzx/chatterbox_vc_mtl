@@ -19,7 +19,7 @@ from config import (
     get_audio_output_format,
 )
 model_cache_path = config_manager.get_path("paths.model_cache", "./model_cache", ensure_absolute=True)
-
+os.environ['PKUSEG_HOME'] = os.path.join(model_cache_path, 'pkuseg')
 from pathlib import Path
 import gradio as gr
 import torch
