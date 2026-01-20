@@ -521,58 +521,42 @@ def apply_speed_factor(
     if LIBROSA_AVAILABLE:
         try:
             audio_np = audio_tensor_cpu.numpy()
-
-            # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # НОВОЕ: Нормализация аудио для librosa
-            # librosa требует float32/64 в диапазоне [-1.0, 1.0]
-            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            if np.abs(audio_np).max() > 1.0:
-                # Предполагаем, что это целочисленный формат (int16 и т.п.)
-                if audio_np.dtype == np.int16:
-                    audio_np = audio_np.astype(np.float32) / 32768.0
-                elif audio_np.dtype == np.int32:
-                    audio_np = audio_np.astype(np.float32) / 2147483648.0
-                else:
-                    # Для неизвестного типа — нормализуем по максимуму
-                    max_val = np.abs(audio_np).max()
-                    audio_np = audio_np.astype(np.float32) / max_val
-            else:
-                audio_np = audio_np.astype(np.float32)
-
-            # Теперь безопасно передавать в librosa
+            # librosa.effects.time_stretch changes duration, not sample rate directly.
+            # The 'rate' parameter in time_stretch is equivalent to speed_factor.
             stretched_audio_np = librosa.effects.time_stretch(
                 y=audio_np, rate=speed_factor
             )
-
-            # Возвращаем как float32 (стандарт для аудио в ML)
-            speed_adjusted_tensor = torch.from_numpy(stretched_audio_np.astype(np.float32))
-
-            # >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-            # Опционально: восстановить устройство (device) исходного тензора
-            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-            speed_adjusted_tensor = speed_adjusted_tensor.to(audio_tensor.device)
-
+            speed_adjusted_tensor = torch.from_numpy(stretched_audio_np)
             logger.info(
                 f"Applied speed factor {speed_factor} using librosa.effects.time_stretch. Original SR: {sample_rate}"
             )
             return speed_adjusted_tensor, sample_rate  # Sample rate is preserved
-
         except Exception as e_librosa:
             logger.error(
                 f"Failed to apply speed factor {speed_factor} using librosa: {e_librosa}. "
                 f"Falling back to basic resampling (pitch will change).",
                 exc_info=True,
             )
-            # Fallback logic unchanged...
+            # Fallback to simple resampling (changes pitch)
             try:
                 new_sample_rate_for_speedup = int(sample_rate / speed_factor)
                 resampler = torchaudio.transforms.Resample(
                     orig_freq=sample_rate, new_freq=new_sample_rate_for_speedup
                 )
+                # Resample to new_sample_rate_for_speedup to change duration, then resample back to original SR
+                # This is effectively what sox 'speed' does, but 'tempo' is better (which librosa does)
+                # For simplicity in fallback, just resample and note pitch change
+                # To actually change speed without changing sample rate and preserving pitch using *only* torchaudio is more complex
+                # and typically involves phase vocoder or similar, which is beyond a simple fallback.
+                # The torchaudio.functional.pitch_shift and then torchaudio.functional.speed is one way,
+                # but librosa is simpler.
+                # Given the instruction "Fallback to original audio" if librosa not available or fails, we'll stick to that.
+                # Original plan: "If Librosa is not available, log a warning and return the original audio"
                 logger.warning(
                     f"Librosa failed for speed factor. Returning original audio as primary fallback."
                 )
                 return audio_tensor, sample_rate
+
             except Exception as e_resample_fallback:
                 logger.error(
                     f"Fallback resampling for speed factor {speed_factor} also failed: {e_resample_fallback}. Returning original audio.",
