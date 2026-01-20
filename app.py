@@ -1057,7 +1057,7 @@ def main():
 
     demo = create_gradio_interface()
     
-    demo.launch(share=True, inbrowser=True)
+    demo.launch(inbrowser=True)
 
 if __name__ == "__main__":
     main()
