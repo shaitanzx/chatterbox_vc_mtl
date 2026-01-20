@@ -42,6 +42,7 @@ import datetime
 import engine  # TTS Engine interface
 from models import CustomTTSRequest  # Pydantic models
 import utils  # Utility functions
+import argparse
 
 from ruaccent import RUAccent
 
@@ -1044,11 +1045,19 @@ def create_gradio_interface():
     
     return demo
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Chatterbox TTS Server")
+    parser.add_argument("--share", action="store_true", 
+                       help="Enable share link for Gradio")
+
+    
+    return parser.parse_args()
 
 def main():
 
     logger.info("Initializing TTS Server...")
-    
+    args = parse_args()
+
     if not engine.load_model():
         logger.critical("CRITICAL: TTS Model failed to load on startup.")
         return
@@ -1057,7 +1066,7 @@ def main():
 
     demo = create_gradio_interface()
     
-    demo.launch(inbrowser=True)
+    demo.launch(share=args.share,inbrowser=not args.no_browser)
 
 if __name__ == "__main__":
     main()
