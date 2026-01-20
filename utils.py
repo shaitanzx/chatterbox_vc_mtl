@@ -521,16 +521,34 @@ def apply_speed_factor(
     if LIBROSA_AVAILABLE:
         try:
             audio_np = audio_tensor_cpu.numpy()
-            # librosa.effects.time_stretch changes duration, not sample rate directly.
-            # The 'rate' parameter in time_stretch is equivalent to speed_factor.
-            stretched_audio_np = librosa.effects.time_stretch(
-                y=audio_np, rate=speed_factor
-            )
-            speed_adjusted_tensor = torch.from_numpy(stretched_audio_np)
+
+        # --- Добавьте нормализацию ---
+        # Определяем, нужно ли нормализовать (если значения вне [-1, 1])
+            if np.abs(audio_np).max() > 1.0:
+            # Предполагаем, что это int16 или подобное
+                if audio_np.dtype == np.int16:
+                    audio_np = audio_np.astype(np.float32) / 32768.0
+                elif audio_np.dtype == np.int32:
+                    audio_np = audio_np.astype(np.float32) / 2147483648.0
+                else:
+                # Для неизвестного типа — просто нормализуем по максимуму
+                    audio_np = audio_np.astype(np.float32) / np.abs(audio_np).max()
+            else:
+                audio_np = audio_np.astype(np.float32)
+
+            stretched_audio_np = librosa.effects.time_stretch(y=audio_np, rate=speed_factor)
+
+        # --- Восстановление исходного масштаба (опционально) ---
+        # Если исходный сигнал был int16, вы можете вернуть его в этот диапазон,
+        # но обычно в ML-пайплайнах работают с float32 в [-1, 1]
+            speed_adjusted_tensor = torch.from_numpy(stretched_audio_np.astype(np.float32))
+
             logger.info(
                 f"Applied speed factor {speed_factor} using librosa.effects.time_stretch. Original SR: {sample_rate}"
             )
-            return speed_adjusted_tensor, sample_rate  # Sample rate is preserved
+            return speed_adjusted_tensor, sample_rate
+
+        
         except Exception as e_librosa:
             logger.error(
                 f"Failed to apply speed factor {speed_factor} using librosa: {e_librosa}. "
