@@ -432,7 +432,7 @@ def applyPreset(preset_name: str, presets: List[Dict[str, Any]]) -> tuple:
 def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_removal,output_format,config_audio_output_sample_rate,speed_factor,audio_name):
         speed_factor = float (speed_factor)
         config_audio_output_sample_rate = int (config_audio_output_sample_rate)
-        audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=config_audio_output_sample_rate)
+        audio_data, engine_output_sample_rate = librosa.load(audio_file, sr=None)
         if silence_trimming:
             audio_data = utils.trim_lead_trail_silence(
                 audio_data, engine_output_sample_rate
@@ -449,43 +449,17 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             )
         if speed_factor != 1.0:
             try:
-                #import librosa
-                #import numpy as np
-
-        # Убедимся, что у нас 1D массив
-                if audio_data.ndim == 2:
-                    if audio_data.shape[0] == 1:
-                        audio_data = audio_data[0]
-                    elif audio_data.shape[1] == 1:
-                        audio_data = audio_data[:, 0]
-                    else:
-                        logger.warning("Multi-channel audio detected. Using first channel for speed adjustment.")
-                        audio_data = audio_data[0]
-
-        # Преобразуем в float32 и нормализуем в [-1, 1], если нужно
-                audio_float = audio_data.astype(np.float32)
-                max_val = np.abs(audio_float).max()
-                if max_val > 1.0:
-            # Предполагаем целочисленный формат (int16 и т.п.)
-                    if audio_data.dtype == np.int16:
-                        audio_float = audio_float / 32768.0
-                    elif audio_data.dtype == np.int32:
-                        audio_float = audio_float / 2147483648.0
-                    else:
-                        audio_float = audio_float / max_val
-
-        # Применяем time-stretching БЕЗ изменения pitch
-                stretched = librosa.effects.time_stretch(y=audio_float, rate=speed_factor)
-
-        # Возвращаем в исходный тип (или оставляем float32 — обычно так и нужно)
-                audio_data = stretched.astype(audio_data.dtype)
-
-                logger.info(f"Successfully applied speed factor {speed_factor} with pitch preservation using librosa.")
-
-            except ImportError:
-                logger.error("librosa is not installed. Install it via 'pip install librosa>=0.10.1' for pitch-preserving speed adjustment.")
+                import torch
+                final_audio_tensor = torch.from_numpy(audio_data.astype(np.float32))
+                
+                final_audio_tensor, _ = utils.apply_speed_factor(
+                    final_audio_tensor, 
+                    engine_output_sample_rate, 
+                    speed_factor
+                )
+                audio_data = final_audio_tensor.cpu().numpy()
             except Exception as e:
-                logger.error(f"Failed to apply pitch-preserving speed factor: {e}", exc_info=True)
+                logger.error(f"Failed to apply speed factor: {e}", exc_info=True)
 
         output_format_str = output_format if output_format else get_audio_output_format()
         if config_audio_output_sample_rate is not None:
