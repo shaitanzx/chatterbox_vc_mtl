@@ -439,7 +439,7 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             )
         
         if internal_silence_fix:
-            audio_datap = utils.fix_internal_silence(
+            audio_data = utils.fix_internal_silence(
                 audio_data, engine_output_sample_rate
             )
 
@@ -447,46 +447,76 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             audio_data = utils.remove_long_unvoiced_segments(
                 audio_data, engine_output_sample_rate
             )
-        if speed_factor != 1.0:
-            try:
-                import torch
-                final_audio_tensor = torch.from_numpy(audio_data.astype(np.float32))
-                
-                final_audio_tensor, _ = utils.apply_speed_factor(
-                    final_audio_tensor, 
-                    engine_output_sample_rate, 
-                    speed_factor
-                )
-                audio_data = final_audio_tensor.cpu().numpy()
-            except Exception as e:
-                logger.error(f"Failed to apply speed factor: {e}", exc_info=True)
 
-        output_format_str = output_format if output_format else get_audio_output_format()
-        if config_audio_output_sample_rate is not None:
-            final_output_sample_rate = config_audio_output_sample_rate
+        if speed_factor != 1.0:
+            output_format_str = output_format if output_format else get_audio_output_format()
+            if config_audio_output_sample_rate is not None:
+                final_output_sample_rate = config_audio_output_sample_rate
+            else:
+                final_output_sample_rate = get_audio_sample_rate()
+            
+            encoded_audio_bytes = utils.encode_audio(
+                audio_array=audio_data,
+                sample_rate=engine_output_sample_rate,
+                output_format=output_format_str,
+                target_sample_rate=final_output_sample_rate,
+                )
+        
+            if encoded_audio_bytes is None:
+                return None, None, gr.update (visible=True)
+        
+            outputs_dir = get_output_path(ensure_absolute=True)
+            outputs_dir.mkdir(parents=True, exist_ok=True)
+    
+            timestamp_str = time.strftime("%Y%m%d_%H%M%S")
+            suggested_filename_base = audio_name or f"tts_output_post_{timestamp_str}"
+            file_name_temp = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
+            file_name = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
+            file_path_temp = outputs_dir / file_name_temp
+            file_path = outputs_dir / file_name
+
+            with open(file_path_temp, "wb") as f:
+                f.write(encoded_audio_bytes)
+
+        
+            
+            cmd = [
+                "ffmpeg", "-y", "-i",
+                file_path_temp,
+                f"-filter:a \"atempo={str(speed_factor)}\"",
+                file_path
+                ]
+            subprocess.run(cmd, check=True)
+
+            os.remove(file_path_temp)
+            return file_path
         else:
-            final_output_sample_rate = get_audio_sample_rate()
+            output_format_str = output_format if output_format else get_audio_output_format()
+            if config_audio_output_sample_rate is not None:
+                final_output_sample_rate = config_audio_output_sample_rate
+            else:
+                final_output_sample_rate = get_audio_sample_rate()
     
-        encoded_audio_bytes = utils.encode_audio(
-            audio_array=audio_data,
-            sample_rate=engine_output_sample_rate,
-            output_format=output_format_str,
-            target_sample_rate=final_output_sample_rate,
-            )
+            encoded_audio_bytes = utils.encode_audio(
+                audio_array=audio_data,
+                sample_rate=engine_output_sample_rate,
+                output_format=output_format_str,
+                target_sample_rate=final_output_sample_rate,
+                )
         
-        if encoded_audio_bytes is None:
-            return None, None, gr.update (visible=True)
+            if encoded_audio_bytes is None:
+                return None, None, gr.update (visible=True)
         
-        outputs_dir = get_output_path(ensure_absolute=True)
-        outputs_dir.mkdir(parents=True, exist_ok=True)
+            outputs_dir = get_output_path(ensure_absolute=True)
+            outputs_dir.mkdir(parents=True, exist_ok=True)
     
-        timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-        suggested_filename_base = audio_name or f"tts_output_post_{timestamp_str}"
-        file_name = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
-        file_path = outputs_dir / file_name
+            timestamp_str = time.strftime("%Y%m%d_%H%M%S")
+            suggested_filename_base = audio_name or f"tts_output_post_{timestamp_str}"
+            file_name = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
+            file_path = outputs_dir / file_name
         
-        with open(file_path, "wb") as f:
-            f.write(encoded_audio_bytes)
+            with open(file_path, "wb") as f:
+                f.write(encoded_audio_bytes)
 
         return file_path
         
