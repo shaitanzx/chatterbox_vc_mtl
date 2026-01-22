@@ -469,7 +469,7 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             outputs_dir.mkdir(parents=True, exist_ok=True)
     
             timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-            suggested_filename_base = audio_name or f"tts_output_post_{timestamp_str}"
+            suggested_filename_base = audio_name or f"tts_output_{timestamp_str}"
             file_name_temp = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
             file_name = utils.sanitize_filename(f"{suggested_filename_base}_post.{output_format_str}")
             file_path_temp = outputs_dir / file_name_temp
