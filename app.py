@@ -478,15 +478,15 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             with open(file_path_temp, "wb") as f:
                 f.write(encoded_audio_bytes)
 
-        
+            os.system(f"ffmpeg -i {str(file_path_temp)} -filter:a atempo=\"{str(speed_factor)}\" {str(file_path)}")
             
-            cmd = [
-                "ffmpeg", "-y", "-i",
-                str(file_path_temp),
-                f"-filter:a atempo={str(speed_factor)}",
-                str(file_path)
-                ]
-            subprocess.run(cmd, check=True)
+            # cmd = [
+            #     "ffmpeg", "-y", "-i",
+            #     str(file_path_temp),
+            #     f"-filter:a atempo={str(speed_factor)}",
+            #     str(file_path)
+            #     ]
+            # subprocess.run(cmd, check=True)
 
             os.remove(file_path_temp)
             return file_path
