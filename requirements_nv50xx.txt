@@ -1,14 +1,14 @@
-# requirements-nvidia.txt (For NVIDIA GPU Installation with CUDA 12.1)
+# requirements-nvidia.txt (For NVIDIA GPU 50xx Installation with CUDA)
 # This file ensures a compatible set of CUDA-enabled torch packages are installed.
 
-# Use the official PyTorch package index for CUDA 12.1.
---extra-index-url https://download.pytorch.org/whl/cu121
+# Use the official PyTorch package index for CUDA
+--extra-index-url--extra-index-url https://download.pytorch.org/whl/cu130
 
 # Pinning a compatible set of torch-related libraries is crucial to avoid dependency conflicts.
 # Updated to use PyTorch 2.5.1 for compatibility with our Colab-compatible chatterbox fork
-torch==2.5.1+cu121
-torchvision==0.20.1+cu121
-torchaudio==2.5.1+cu121
+torch==2.9.0+cu128
+torchvision==0.24.0+cu128
+torchaudio==2.9.0+cu128
 
 # --- Core Application Dependencies ---
 
