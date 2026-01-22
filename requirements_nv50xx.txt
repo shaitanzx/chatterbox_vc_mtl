@@ -2,7 +2,7 @@
 # This file ensures a compatible set of CUDA-enabled torch packages are installed.
 
 # Use the official PyTorch package index for CUDA
---extra-index-url--extra-index-url https://download.pytorch.org/whl/cu130
+--extra-index-url https://download.pytorch.org/whl/cu130
 
 # Pinning a compatible set of torch-related libraries is crucial to avoid dependency conflicts.
 # Updated to use PyTorch 2.5.1 for compatibility with our Colab-compatible chatterbox fork
