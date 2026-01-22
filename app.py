@@ -483,7 +483,7 @@ def postprocess(audio_file,silence_trimming,internal_silence_fix,unvoiced_remova
             cmd = [
                 "ffmpeg", "-y", "-i",
                 str(file_path_temp),
-                f"-filter:a \"atempo={str(speed_factor)}\"",
+                f"-filter:a atempo={str(speed_factor)}",
                 str(file_path)
                 ]
             subprocess.run(cmd, check=True)
